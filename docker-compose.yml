@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: sward
+      POSTGRES_PASSWORD: sward
+      POSTGRES_DB: integracion_lms_db
+    ports:
+      - "5434:5432"
+  app:
+    build: .
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sward:sward@db:5432/integracion_lms_db
+      MOODLE_MOCK: "true"
+      ENVIRONMENT: development
+    depends_on:
+      - db
