@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.application.use_cases.consultar_actividades_lms import (
     ConsultarActividadesLmsUseCase,
 )
@@ -14,25 +14,20 @@ from src.application.use_cases.sincronizar_moodle import (
     SincronizarMoodleCommand,
     SincronizarMoodleUseCase,
 )
-from src.infrastructure.adapters.out_.eventbridge_adapter import EventBridgeAdapter
-from src.infrastructure.adapters.out_.lms_postgres_adapter import LmsPostgresAdapter
-from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
-    MockMoodleApiAdapter,
+from src.infrastructure.dependencies import (
+    get_consultar_actividades_uc,
+    get_consultar_calificaciones_uc,
+    get_consultar_cursos_uc,
+    get_consultar_interacciones_uc,
+    get_sincronizar_moodle_uc,
 )
-from src.infrastructure.adapters.out_.moodle_api_adapter import MoodleApiAdapter
-from src.infrastructure.config.settings import settings
-from src.infrastructure.db.database import get_session
 
 router = APIRouter(prefix="/lms", tags=["LMS"])
 
 
-def _moodle():
-    return MockMoodleApiAdapter() if settings.moodle_mock else MoodleApiAdapter()
-
-
 @router.get("/courses")
-async def get_courses(session: AsyncSession = Depends(get_session)):
-    cursos = await ConsultarCursosLmsUseCase(LmsPostgresAdapter(session)).execute()
+async def get_courses(uc: ConsultarCursosLmsUseCase = Depends(get_consultar_cursos_uc)):
+    cursos = await uc.execute()
     return [
         {
             "id": str(c.id),
@@ -46,11 +41,10 @@ async def get_courses(session: AsyncSession = Depends(get_session)):
 
 @router.get("/activities")
 async def get_activities(
-    courseId: str | None = None, session: AsyncSession = Depends(get_session)
+    courseId: str | None = None,
+    uc: ConsultarActividadesLmsUseCase = Depends(get_consultar_actividades_uc),
 ):
-    acts = await ConsultarActividadesLmsUseCase(LmsPostgresAdapter(session)).execute(
-        courseId
-    )
+    acts = await uc.execute(courseId)
     return [
         {
             "id": str(a.id),
@@ -66,11 +60,9 @@ async def get_activities(
 async def get_grades(
     courseId: str | None = None,
     userId: str | None = None,
-    session: AsyncSession = Depends(get_session),
+    uc: ConsultarCalificacionesLmsUseCase = Depends(get_consultar_calificaciones_uc),
 ):
-    grades = await ConsultarCalificacionesLmsUseCase(
-        LmsPostgresAdapter(session)
-    ).execute(courseId, userId)
+    grades = await uc.execute(courseId, userId)
     return [
         {
             "id": str(g.id),
@@ -86,11 +78,9 @@ async def get_grades(
 async def get_interactions(
     courseId: str | None = None,
     userId: str | None = None,
-    session: AsyncSession = Depends(get_session),
+    uc: ConsultarInteraccionesLmsUseCase = Depends(get_consultar_interacciones_uc),
 ):
-    items = await ConsultarInteraccionesLmsUseCase(LmsPostgresAdapter(session)).execute(
-        courseId, userId
-    )
+    items = await uc.execute(courseId, userId)
     return [
         {
             "id": str(i.id),
@@ -104,7 +94,5 @@ async def get_interactions(
 
 
 @router.post("/sync")
-async def sync(session: AsyncSession = Depends(get_session)):
-    return await SincronizarMoodleUseCase(
-        _moodle(), LmsPostgresAdapter(session), EventBridgeAdapter()
-    ).execute(SincronizarMoodleCommand())
+async def sync(uc: SincronizarMoodleUseCase = Depends(get_sincronizar_moodle_uc)):
+    return await uc.execute(SincronizarMoodleCommand())
