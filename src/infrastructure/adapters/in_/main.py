@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from scalar_fastapi import get_scalar_api_reference
 
 from src.infrastructure.adapters.in_.lms_router import router as lms_router
 from src.infrastructure.config.settings import settings
@@ -21,7 +22,22 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="SWARD — Integración LMS", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="SWARD — Microservicio de Integración LMS",
+    version="0.1.0",
+    description=(
+        "Sincroniza y expone datos del LMS (Moodle): cursos, actividades, "
+        "calificaciones e interacciones, normalizados para el resto de SWARD."
+    ),
+    lifespan=lifespan,
+    openapi_tags=[
+        {
+            "name": "LMS",
+            "description": "Consulta y sincronización de datos provenientes del LMS (Moodle).",
+        },
+        {"name": "Health", "description": "Sonda de estado del servicio."},
+    ],
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_allowed_origins,
@@ -56,8 +72,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(lms_router)
 
 
-@app.get("/health")
+@app.get("/scalar", include_in_schema=False)
+async def scalar_docs():
+    """Renderiza la referencia de API interactiva (Scalar) del servicio."""
+    return get_scalar_api_reference(openapi_url=app.openapi_url, title=app.title)
+
+
+@app.get("/health", tags=["Health"], summary="Estado del servicio")
 async def health():
+    """Devuelve el estado de salud del microservicio y si opera en modo mock de Moodle."""
     return {
         "status": "ok",
         "service": settings.service_name,
