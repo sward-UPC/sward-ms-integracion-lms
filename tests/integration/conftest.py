@@ -35,7 +35,15 @@ from src.infrastructure.dependencies import (
     get_consultar_cursos_uc,
     get_consultar_interacciones_uc,
     get_sincronizar_moodle_uc,
+    require_jwt,
 )
+
+FAKE_PAYLOAD = {
+    "sub": "00000000-0000-0000-0000-000000000001",
+    "rol": "docente",
+    "permisos": ["leer"],
+    "type": "access",
+}
 
 
 class FakeLmsRepo(LmsRepositoryPort):
@@ -116,7 +124,19 @@ async def client():
     app.dependency_overrides[get_consultar_interacciones_uc] = lambda: (
         ConsultarInteraccionesLmsUseCase(repo)
     )
+    # Sobreescribe la validación JWT por un payload fake (autenticación simulada).
+    app.dependency_overrides[require_jwt] = lambda: FAKE_PAYLOAD
 
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def anon_client():
+    """Cliente sin override de auth: los endpoints protegidos exigen token real."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

@@ -20,9 +20,11 @@ from src.infrastructure.dependencies import (
     get_consultar_cursos_uc,
     get_consultar_interacciones_uc,
     get_sincronizar_moodle_uc,
+    require_jwt,
 )
 
-router = APIRouter(prefix="/lms", tags=["LMS"])
+# Todos los endpoints de /lms exigen un JWT de acceso válido.
+router = APIRouter(prefix="/lms", tags=["LMS"], dependencies=[Depends(require_jwt)])
 
 
 @router.get("/courses")
