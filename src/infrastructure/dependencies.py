@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sward_shared.auth import build_require_jwt, build_require_service_key
 
 from src.application.use_cases.consultar_actividades_lms import (
     ConsultarActividadesLmsUseCase,
@@ -22,6 +23,12 @@ from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
 from src.infrastructure.adapters.out_.moodle_api_adapter import MoodleApiAdapter
 from src.infrastructure.config.settings import settings
 from src.infrastructure.db.database import get_session
+
+# Dependencia de autenticación JWT reutilizable, compartida vía sward-shared.
+require_jwt = build_require_jwt(settings.secret_key, algorithm=settings.jwt_algorithm)
+
+# Validación entrante de service-key (modo dev permite sin claves configuradas).
+require_service_key = build_require_service_key(settings.authorized_service_keys_set)
 
 
 @lru_cache(maxsize=1)
