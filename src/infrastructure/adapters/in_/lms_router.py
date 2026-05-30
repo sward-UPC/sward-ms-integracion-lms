@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from src.application.use_cases.consultar_actividades_lms import (
     ConsultarActividadesLmsUseCase,
@@ -43,7 +43,7 @@ async def get_courses(uc: ConsultarCursosLmsUseCase = Depends(get_consultar_curs
 
 @router.get("/activities")
 async def get_activities(
-    courseId: str | None = None,
+    courseId: str | None = Query(default=None, max_length=64),
     uc: ConsultarActividadesLmsUseCase = Depends(get_consultar_actividades_uc),
 ):
     acts = await uc.execute(courseId)
@@ -60,8 +60,8 @@ async def get_activities(
 
 @router.get("/grades")
 async def get_grades(
-    courseId: str | None = None,
-    userId: str | None = None,
+    courseId: str | None = Query(default=None, max_length=64),
+    userId: str | None = Query(default=None, max_length=64),
     uc: ConsultarCalificacionesLmsUseCase = Depends(get_consultar_calificaciones_uc),
 ):
     grades = await uc.execute(courseId, userId)
@@ -78,8 +78,8 @@ async def get_grades(
 
 @router.get("/interactions")
 async def get_interactions(
-    courseId: str | None = None,
-    userId: str | None = None,
+    courseId: str | None = Query(default=None, max_length=64),
+    userId: str | None = Query(default=None, max_length=64),
     uc: ConsultarInteraccionesLmsUseCase = Depends(get_consultar_interacciones_uc),
 ):
     items = await uc.execute(courseId, userId)
