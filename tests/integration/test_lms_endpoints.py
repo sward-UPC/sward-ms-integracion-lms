@@ -31,7 +31,7 @@ async def test_courses_vacio_antes_de_sincronizar(client):
 @pytest.mark.asyncio
 async def test_sync_procesa_datos_del_mock_moodle(client):
     resp = await client.post(SYNC)
-    assert resp.status_code == 200
+    assert resp.status_code == 202
     body = resp.json()
     # El mock entrega 3 cursos y registros asociados.
     assert body["cursos"] == 3
