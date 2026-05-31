@@ -158,23 +158,19 @@ class SyncResultResponse(BaseModel):
         extra="forbid",
         json_schema_extra={
             "example": {
-                "status": "success",
-                "timestamp": "2025-05-31T14:30:00Z",
-                "records_processed": 150,
+                "registros_procesados": 150,
+                "cursos": 3,
             }
         },
     )
 
-    status: str = Field(
-        description="Estado de la sincronización (success, error, etc.)",
-        example="success",
+    registros_procesados: int = Field(
+        description="Cantidad total de registros procesados",
+        ge=0,
+        example=150,
     )
-    timestamp: str = Field(
-        description="Marca de tiempo de la sincronización",
-        example="2025-05-31T14:30:00Z",
-    )
-    records_processed: int = Field(
-        description="Cantidad de registros procesados", ge=0, example=150
+    cursos: int = Field(
+        description="Cantidad de cursos sincronizados", ge=0, example=3
     )
 
 
