@@ -169,9 +169,7 @@ class SyncResultResponse(BaseModel):
         ge=0,
         example=150,
     )
-    cursos: int = Field(
-        description="Cantidad de cursos sincronizados", ge=0, example=3
-    )
+    cursos: int = Field(description="Cantidad de cursos sincronizados", ge=0, example=3)
 
 
 @router.get(
