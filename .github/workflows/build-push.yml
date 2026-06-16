@@ -11,7 +11,8 @@ jobs:
     with:
       image_name: sward-ms-integracion-lms
       service_type: microservice
-      aws_service_name: sward-ms-integracion-lms
+      aws_service_name: integracion-lms
       aws_cluster_name: sward-cluster
       needs_shared: true
     secrets: inherit
+
