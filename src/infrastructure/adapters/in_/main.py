@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SWARD — Microservicio de Integración LMS",
     version="0.1.0",
+    openapi_url="/lms/openapi.json",
     description=(
         "Sincroniza y expone datos del LMS (Moodle): cursos, actividades, "
         "calificaciones e interacciones, normalizados para el resto de SWARD."
