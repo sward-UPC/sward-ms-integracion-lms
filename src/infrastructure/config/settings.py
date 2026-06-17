@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     @property
     def authorized_service_keys_set(self) -> set[str]:
         keys = {k.strip() for k in self.authorized_service_keys.split(",") if k.strip()}
-        for val in (self.authorized_trazabilidad_key,):
+        for val in (self.authorized_trazabilidad_key, self.service_key):
             if val:
                 keys.add(val)
         return keys
