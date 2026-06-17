@@ -21,6 +21,9 @@ from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
     MockMoodleApiAdapter,
 )
 from src.infrastructure.adapters.out_.moodle_api_adapter import MoodleApiAdapter
+from src.infrastructure.adapters.out_.trazabilidad_rest_adapter import (
+    TrazabilidadRestAdapter,
+)
 from src.infrastructure.config.settings import settings
 from src.infrastructure.db.database import get_session
 
@@ -69,5 +72,8 @@ def get_sincronizar_moodle_uc(
     events: EventBridgeAdapter = Depends(get_eventbridge_adapter),
 ) -> SincronizarMoodleUseCase:
     return SincronizarMoodleUseCase(
-        get_moodle_adapter(), LmsPostgresAdapter(session), events
+        get_moodle_adapter(),
+        LmsPostgresAdapter(session),
+        events,
+        TrazabilidadRestAdapter(),
     )

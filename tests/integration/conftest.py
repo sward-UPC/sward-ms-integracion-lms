@@ -25,6 +25,7 @@ from src.domain.entities.calificacion_lms import CalificacionLMS
 from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
 from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.domain.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
 from src.infrastructure.adapters.in_.main import app
 from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
     MockMoodleApiAdapter,
@@ -103,14 +104,20 @@ class _StubEventPublisher:
         return None
 
 
+class _StubTrazabilidadClient(TrazabilidadClientPort):
+    async def sync_interacciones(self, interacciones) -> None:  # noqa: ARG002
+        return None
+
+
 @pytest_asyncio.fixture
 async def client():
     repo = FakeLmsRepo()
     moodle = MockMoodleApiAdapter()
     events = _StubEventPublisher()
+    trazabilidad = _StubTrazabilidadClient()
 
     app.dependency_overrides[get_sincronizar_moodle_uc] = lambda: (
-        SincronizarMoodleUseCase(moodle, repo, events)
+        SincronizarMoodleUseCase(moodle, repo, events, trazabilidad)
     )
     app.dependency_overrides[get_consultar_cursos_uc] = lambda: (
         ConsultarCursosLmsUseCase(repo)
