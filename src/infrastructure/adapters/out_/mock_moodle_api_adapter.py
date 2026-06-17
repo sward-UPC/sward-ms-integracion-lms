@@ -4,6 +4,27 @@ from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
 from src.domain.ports.out_.moodle_api_port import MoodleApiPort
 
+MOCK_USERS = {
+    "estudiante01@sward.edu": {
+        "moodle_user_id": 7,
+        "nombre": "Estudiante",
+        "apellido": "Uno",
+        "rol": "estudiante",
+    },
+    "estudiante02@sward.edu": {
+        "moodle_user_id": 8,
+        "nombre": "Estudiante",
+        "apellido": "Dos",
+        "rol": "estudiante",
+    },
+    "docente01@sward.edu": {
+        "moodle_user_id": 2,
+        "nombre": "Docente",
+        "apellido": "Uno",
+        "rol": "docente",
+    },
+}
+
 MOCK_COURSES = [
     {
         "id": "course-101",
@@ -53,6 +74,12 @@ class MockMoodleApiAdapter(MoodleApiPort):
                 puntaje=72.0,
             ),
         ]
+
+    async def buscar_por_correo(self, correo: str) -> dict | None:
+        entry = MOCK_USERS.get(correo.lower())
+        if not entry:
+            return None
+        return {**entry, "correo": correo}
 
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
         return [
