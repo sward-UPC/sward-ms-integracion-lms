@@ -21,7 +21,9 @@ def use_case():
     repo.save_actividades.return_value = 0
     repo.save_calificaciones.return_value = 0
     repo.save_interacciones.return_value = 0
-    return SincronizarMoodleUseCase(moodle, repo, MagicMock())
+    trazabilidad = AsyncMock()
+    trazabilidad.sync_interacciones.return_value = None
+    return SincronizarMoodleUseCase(moodle, repo, MagicMock(), trazabilidad)
 
 
 @pytest.mark.asyncio
