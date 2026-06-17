@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     # Autenticación JWT (token emitido por sward-ms-usuarios, HS256).
     secret_key: str = DEFAULT_SECRET_KEY
     jwt_algorithm: str = "HS256"
+    # URL del servicio de trazabilidad (Cloud Map DNS en ECS).
+    trazabilidad_service_url: str = "http://trazabilidad.sward.local:8000"
     # Clave propia que este servicio envía como X-Service-Key en llamadas salientes.
     service_key: str = ""
     # Claves de servicio entrantes autorizadas, separadas por coma (legacy/manual).
