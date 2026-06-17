@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import httpx
 from src.domain.entities.actividad_lms import ActividadLMS
 from src.domain.entities.calificacion_lms import CalificacionLMS
@@ -48,8 +50,74 @@ class MoodleApiAdapter(MoodleApiPort):
                 )
         return acts
 
+    async def _get_enrolled_users(self, moodle_course_id: str) -> list[dict]:
+        data = await self._call(
+            "core_enrol_get_enrolled_users", courseid=moodle_course_id
+        )
+        return data if isinstance(data, list) else []
+
+    async def _get_grade_items(self, moodle_course_id: str, user_id: int) -> list[dict]:
+        data = await self._call(
+            "gradereport_user_get_grade_items",
+            courseid=moodle_course_id,
+            userid=user_id,
+        )
+        items = []
+        for ug in data.get("usergrades", []):
+            for item in ug.get("gradeitems", []):
+                if item.get("graderaw") is None:
+                    continue
+                if item.get("itemtype") != "mod":
+                    continue
+                items.append(item)
+        return items
+
     async def get_grades(self, moodle_course_id: str) -> list[CalificacionLMS]:
-        return []
+        users = await self._get_enrolled_users(moodle_course_id)
+        results = []
+        for user in users:
+            user_id = user.get("id")
+            if not user_id:
+                continue
+            for item in await self._get_grade_items(moodle_course_id, user_id):
+                results.append(
+                    CalificacionLMS(
+                        moodle_user_id=str(user_id),
+                        moodle_activity_id=str(item.get("iteminstance", "")),
+                        moodle_course_id=moodle_course_id,
+                        puntaje=float(item["graderaw"]),
+                        puntaje_maximo=float(item.get("grademax") or 100.0),
+                    )
+                )
+        return results
 
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
-        return []
+        users = await self._get_enrolled_users(moodle_course_id)
+        results = []
+        for user in users:
+            user_id = user.get("id")
+            if not user_id:
+                continue
+            for item in await self._get_grade_items(moodle_course_id, user_id):
+                graderaw = float(item["graderaw"])
+                grademax = float(item.get("grademax") or 100.0)
+                submitted_ts = item.get("gradedatesubmitted")
+                fecha = (
+                    datetime.fromtimestamp(submitted_ts, tz=timezone.utc)
+                    if submitted_ts
+                    else datetime.now(timezone.utc)
+                )
+                results.append(
+                    InteraccionLMS(
+                        moodle_event_id=f"{user_id}-{item.get('iteminstance', '')}",
+                        moodle_user_id=str(user_id),
+                        moodle_course_id=moodle_course_id,
+                        moodle_activity_id=str(item.get("iteminstance", "")),
+                        accion="submit",
+                        es_correcta=graderaw / grademax >= 0.5
+                        if grademax > 0
+                        else False,
+                        fecha_evento=fecha,
+                    )
+                )
+        return results
