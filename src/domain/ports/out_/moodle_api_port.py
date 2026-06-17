@@ -14,3 +14,11 @@ class MoodleApiPort(ABC):
     async def get_grades(self, moodle_course_id: str) -> list[CalificacionLMS]: ...
     @abstractmethod
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]: ...
+    @abstractmethod
+    async def buscar_por_correo(self, correo: str) -> dict | None:
+        """Busca un usuario en Moodle por correo electrónico.
+
+        Retorna dict con moodle_user_id, nombre, apellido, correo, rol
+        (estudiante | docente) o None si no existe.
+        """
+        ...
