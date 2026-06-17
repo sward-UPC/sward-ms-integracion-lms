@@ -22,10 +22,18 @@ from src.infrastructure.dependencies import (
     get_consultar_interacciones_uc,
     get_sincronizar_moodle_uc,
     require_jwt,
+    require_service_key,
 )
 
-# Todos los endpoints de /lms exigen un JWT de acceso válido.
+# Endpoints de usuario — requieren JWT.
 router = APIRouter(prefix="/lms", tags=["LMS"], dependencies=[Depends(require_jwt)])
+
+# Endpoints internos — llamados por lambdas con X-Service-Key, no por usuarios.
+internal_router = APIRouter(
+    prefix="/lms",
+    tags=["LMS — Internal"],
+    dependencies=[Depends(require_service_key)],
+)
 
 
 class CursoLMSResponse(BaseModel):
@@ -382,7 +390,7 @@ async def get_interactions(
     ]
 
 
-@router.post(
+@internal_router.post(
     "/sync",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=SyncResultResponse,
