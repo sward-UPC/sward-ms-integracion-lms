@@ -51,7 +51,9 @@ class MoodleApiAdapter(MoodleApiPort):
         return acts
 
     async def _get_enrolled_users(self, moodle_course_id: str) -> list[dict]:
-        data = await self._call("core_enrol_get_enrolled_users", courseid=moodle_course_id)
+        data = await self._call(
+            "core_enrol_get_enrolled_users", courseid=moodle_course_id
+        )
         return data if isinstance(data, list) else []
 
     async def _get_grade_items(self, moodle_course_id: str, user_id: int) -> list[dict]:
@@ -112,7 +114,9 @@ class MoodleApiAdapter(MoodleApiPort):
                         moodle_course_id=moodle_course_id,
                         moodle_activity_id=str(item.get("iteminstance", "")),
                         accion="submit",
-                        es_correcta=graderaw / grademax >= 0.5 if grademax > 0 else False,
+                        es_correcta=graderaw / grademax >= 0.5
+                        if grademax > 0
+                        else False,
                         fecha_evento=fecha,
                     )
                 )
