@@ -7,6 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from scalar_fastapi import get_scalar_api_reference
 
+from src.infrastructure.adapters.in_.lms_router import (
+    internal_router as lms_internal_router,
+)
 from src.infrastructure.adapters.in_.lms_router import router as lms_router
 from src.infrastructure.config.settings import settings
 from src.infrastructure.db.database import engine
@@ -84,6 +87,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 app.include_router(lms_router)
+app.include_router(lms_internal_router)
 
 
 @app.get("/scalar", include_in_schema=False)
