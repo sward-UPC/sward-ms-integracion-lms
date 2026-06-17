@@ -3,6 +3,7 @@ from src.domain.events.datos_lms_sincronizados_event import DatosLmsSincronizado
 from src.domain.ports.out_.event_publisher_port import EventPublisherPort
 from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
 from src.domain.ports.out_.moodle_api_port import MoodleApiPort
+from src.domain.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
 
 
 @dataclass
@@ -16,14 +17,17 @@ class SincronizarMoodleUseCase:
         moodle_api: MoodleApiPort,
         repo: LmsRepositoryPort,
         event_publisher: EventPublisherPort,
+        trazabilidad: TrazabilidadClientPort,
     ):
         self._moodle = moodle_api
         self._repo = repo
         self._event_publisher = event_publisher
+        self._trazabilidad = trazabilidad
 
     async def execute(self, command: SincronizarMoodleCommand) -> dict:
         cursos = await self._moodle.get_courses()
         total = await self._repo.save_cursos(cursos)
+        todas_las_interacciones = []
         for curso in cursos:
             acts = await self._moodle.get_activities(curso.moodle_course_id)
             total += await self._repo.save_actividades(acts)
@@ -31,7 +35,9 @@ class SincronizarMoodleUseCase:
             total += await self._repo.save_calificaciones(grades)
             events = await self._moodle.get_events(curso.moodle_course_id)
             total += await self._repo.save_interacciones(events)
+            todas_las_interacciones.extend(events)
         self._event_publisher.publish(
             DatosLmsSincronizadosEvent(registros_procesados=total)
         )
+        await self._trazabilidad.sync_interacciones(todas_las_interacciones)
         return {"registros_procesados": total, "cursos": len(cursos)}
