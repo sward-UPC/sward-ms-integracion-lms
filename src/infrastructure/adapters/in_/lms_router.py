@@ -15,11 +15,13 @@ from src.application.use_cases.sincronizar_moodle import (
     SincronizarMoodleCommand,
     SincronizarMoodleUseCase,
 )
+from src.domain.ports.out_.moodle_api_port import MoodleApiPort
 from src.infrastructure.dependencies import (
     get_consultar_actividades_uc,
     get_consultar_calificaciones_uc,
     get_consultar_cursos_uc,
     get_consultar_interacciones_uc,
+    get_moodle_adapter,
     get_sincronizar_moodle_uc,
     require_jwt,
     require_service_key,
@@ -388,6 +390,68 @@ async def get_interactions(
         }
         for i in items
     ]
+
+
+class UsuarioMoodleResponse(BaseModel):
+    """Datos del usuario encontrado en Moodle."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "moodle_user_id": 7,
+                "nombre": "Juan",
+                "apellido": "Pérez",
+                "correo": "jperez@sward.edu",
+                "rol": "estudiante",
+            }
+        },
+    )
+
+    moodle_user_id: int = Field(
+        description="ID numérico del usuario en Moodle", example=7
+    )
+    nombre: str = Field(description="Nombre del usuario en Moodle", example="Juan")
+    apellido: str = Field(description="Apellido del usuario en Moodle", example="Pérez")
+    correo: str = Field(
+        description="Correo electrónico institucional", example="jperez@sward.edu"
+    )
+    rol: str = Field(
+        description="Rol detectado en Moodle: estudiante | docente",
+        example="estudiante",
+    )
+
+
+@internal_router.get(
+    "/users/lookup",
+    status_code=status.HTTP_200_OK,
+    response_model=UsuarioMoodleResponse,
+    responses={
+        200: {"description": "Usuario encontrado en Moodle"},
+        404: {"description": "Correo no registrado en Moodle"},
+        422: {"description": "Parámetro correo inválido"},
+    },
+)
+async def lookup_usuario_moodle(
+    correo: str = Query(..., description="Correo institucional a buscar en Moodle"),
+    moodle: MoodleApiPort = Depends(get_moodle_adapter),
+):
+    """Busca un usuario en Moodle por correo electrónico.
+
+    Usado por ms-usuarios durante el registro para verificar la identidad y
+    obtener el moodle_user_id y rol del nuevo usuario.
+
+    **Auth:** X-Service-Key | **SLA:** <2s (depende de Moodle)
+    """
+    from fastapi import HTTPException
+
+    usuario = await moodle.buscar_por_correo(correo)
+    if usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Correo no registrado en la plataforma educativa.",
+        )
+    return usuario
 
 
 @internal_router.post(

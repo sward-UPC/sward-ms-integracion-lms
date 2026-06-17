@@ -91,6 +91,60 @@ class MoodleApiAdapter(MoodleApiPort):
                 )
         return results
 
+    async def buscar_por_correo(self, correo: str) -> dict | None:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.get(
+                f"{settings.moodle_base_url}/webservice/rest/server.php",
+                params={
+                    "wstoken": settings.moodle_token,
+                    "moodlewsrestformat": "json",
+                    "wsfunction": "core_user_get_users",
+                    "criteria[0][key]": "email",
+                    "criteria[0][value]": correo,
+                },
+            )
+            r.raise_for_status()
+            data = r.json()
+
+        users = data.get("users", []) if isinstance(data, dict) else []
+        if not users:
+            return None
+
+        user = users[0]
+        moodle_user_id: int = user["id"]
+
+        # Determinar rol revisando los roles en los cursos del usuario.
+        rol = "estudiante"
+        ROLES_DOCENTE = {"editingteacher", "teacher", "manager", "coursecreator"}
+        try:
+            courses = await self._call(
+                "core_enrol_get_users_courses", userid=moodle_user_id
+            )
+            for course in courses[:5] if isinstance(courses, list) else []:
+                enrolled = await self._call(
+                    "core_enrol_get_enrolled_users", courseid=course["id"]
+                )
+                for u in enrolled if isinstance(enrolled, list) else []:
+                    if u.get("id") == moodle_user_id:
+                        if any(
+                            r.get("shortname") in ROLES_DOCENTE
+                            for r in u.get("roles", [])
+                        ):
+                            rol = "docente"
+                        break
+                if rol == "docente":
+                    break
+        except Exception:
+            pass  # rol queda como "estudiante" si Moodle falla en este paso
+
+        return {
+            "moodle_user_id": moodle_user_id,
+            "nombre": user.get("firstname", ""),
+            "apellido": user.get("lastname", ""),
+            "correo": user.get("email", correo),
+            "rol": rol,
+        }
+
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
         users = await self._get_enrolled_users(moodle_course_id)
         results = []
