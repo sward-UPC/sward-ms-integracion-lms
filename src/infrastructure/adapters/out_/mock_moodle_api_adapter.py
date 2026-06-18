@@ -87,6 +87,7 @@ class MockMoodleApiAdapter(MoodleApiPort):
                 moodle_user_id="user-1",
                 moodle_course_id=moodle_course_id,
                 moodle_activity_id=f"{moodle_course_id}-act-1",
+                concepto="Unidad 1 - Fundamentos",
                 accion="submitted",
                 es_correcta=True,
             ),
@@ -94,6 +95,7 @@ class MockMoodleApiAdapter(MoodleApiPort):
                 moodle_user_id="user-2",
                 moodle_course_id=moodle_course_id,
                 moodle_activity_id=f"{moodle_course_id}-act-1",
+                concepto="Unidad 1 - Fundamentos",
                 accion="viewed",
             ),
         ]
