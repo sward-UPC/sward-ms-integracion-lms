@@ -145,8 +145,24 @@ class MoodleApiAdapter(MoodleApiPort):
             "rol": rol,
         }
 
+    async def _secciones_por_modulo(self, moodle_course_id: str) -> dict[tuple[str, str], str]:
+        """Mapa {(modname, instance): nombre_de_seccion} para asignar el concepto.
+
+        El concepto/skill de SAKT es la sección del curso a la que pertenece la
+        actividad (core_course_get_contents devuelve secciones con sus módulos).
+        """
+        data = await self._call("core_course_get_contents", courseid=moodle_course_id)
+        mapa: dict[tuple[str, str], str] = {}
+        for section in data if isinstance(data, list) else []:
+            nombre = section.get("name", "") or "General"
+            for m in section.get("modules", []):
+                if m.get("modname") and m.get("instance") is not None:
+                    mapa[(str(m["modname"]), str(m["instance"]))] = nombre
+        return mapa
+
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
         users = await self._get_enrolled_users(moodle_course_id)
+        secciones = await self._secciones_por_modulo(moodle_course_id)
         results = []
         for user in users:
             user_id = user.get("id")
@@ -161,12 +177,18 @@ class MoodleApiAdapter(MoodleApiPort):
                     if submitted_ts
                     else datetime.now(timezone.utc)
                 )
+                instancia = str(item.get("iteminstance", ""))
+                # Concepto = sección del curso; si no se resuelve, el nombre del ítem.
+                concepto = secciones.get(
+                    (str(item.get("itemmodule", "")), instancia)
+                ) or item.get("itemname", "") or "General"
                 results.append(
                     InteraccionLMS(
-                        moodle_event_id=f"{user_id}-{item.get('iteminstance', '')}",
+                        moodle_event_id=f"{user_id}-{instancia}",
                         moodle_user_id=str(user_id),
                         moodle_course_id=moodle_course_id,
-                        moodle_activity_id=str(item.get("iteminstance", "")),
+                        moodle_activity_id=instancia,
+                        concepto=concepto,
                         accion="submit",
                         es_correcta=graderaw / grademax >= 0.5
                         if grademax > 0
