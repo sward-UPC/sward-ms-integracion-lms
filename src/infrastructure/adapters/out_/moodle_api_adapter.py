@@ -145,7 +145,9 @@ class MoodleApiAdapter(MoodleApiPort):
             "rol": rol,
         }
 
-    async def _secciones_por_modulo(self, moodle_course_id: str) -> dict[tuple[str, str], str]:
+    async def _secciones_por_modulo(
+        self, moodle_course_id: str
+    ) -> dict[tuple[str, str], str]:
         """Mapa {(modname, instance): nombre_de_seccion} para asignar el concepto.
 
         El concepto/skill de SAKT es la sección del curso a la que pertenece la
@@ -179,9 +181,11 @@ class MoodleApiAdapter(MoodleApiPort):
                 )
                 instancia = str(item.get("iteminstance", ""))
                 # Concepto = sección del curso; si no se resuelve, el nombre del ítem.
-                concepto = secciones.get(
-                    (str(item.get("itemmodule", "")), instancia)
-                ) or item.get("itemname", "") or "General"
+                concepto = (
+                    secciones.get((str(item.get("itemmodule", "")), instancia))
+                    or item.get("itemname", "")
+                    or "General"
+                )
                 results.append(
                     InteraccionLMS(
                         moodle_event_id=f"{user_id}-{instancia}",
