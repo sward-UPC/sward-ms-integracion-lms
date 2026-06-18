@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     # URL del servicio de trazabilidad (Cloud Map DNS en ECS).
     trazabilidad_service_url: str = "http://trazabilidad.sward.local:8000"
+    # URL del servicio de cursos-recursos (catálogo que se alimenta del sync Moodle).
+    cursos_service_url: str = "http://cursos-recursos.sward.local:8000"
     # Clave propia que este servicio envía como X-Service-Key en llamadas salientes.
     service_key: str = ""
     # Claves de servicio entrantes autorizadas, separadas por coma (legacy/manual).
