@@ -22,6 +22,7 @@ from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
 )
 from src.infrastructure.adapters.out_.moodle_api_adapter import MoodleApiAdapter
 from src.infrastructure.adapters.out_.cursos_rest_adapter import CursosRestAdapter
+from src.infrastructure.adapters.out_.recursos_rest_adapter import RecursosRestAdapter
 from src.infrastructure.adapters.out_.trazabilidad_rest_adapter import (
     TrazabilidadRestAdapter,
 )
@@ -78,4 +79,5 @@ def get_sincronizar_moodle_uc(
         events,
         TrazabilidadRestAdapter(),
         CursosRestAdapter(),
+        RecursosRestAdapter(),
     )
