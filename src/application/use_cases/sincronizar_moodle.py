@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from src.domain.events.datos_lms_sincronizados_event import DatosLmsSincronizadosEvent
+from src.domain.ports.out_.cursos_client_port import CursosClientPort
 from src.domain.ports.out_.event_publisher_port import EventPublisherPort
 from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
 from src.domain.ports.out_.moodle_api_port import MoodleApiPort
@@ -18,15 +19,19 @@ class SincronizarMoodleUseCase:
         repo: LmsRepositoryPort,
         event_publisher: EventPublisherPort,
         trazabilidad: TrazabilidadClientPort,
+        cursos_client: CursosClientPort,
     ):
         self._moodle = moodle_api
         self._repo = repo
         self._event_publisher = event_publisher
         self._trazabilidad = trazabilidad
+        self._cursos_client = cursos_client
 
     async def execute(self, command: SincronizarMoodleCommand) -> dict:
         cursos = await self._moodle.get_courses()
         total = await self._repo.save_cursos(cursos)
+        # Propaga el catálogo de cursos a ms-cursos-recursos (no bloqueante).
+        await self._cursos_client.sync_cursos(cursos)
         todas_las_interacciones = []
         for curso in cursos:
             acts = await self._moodle.get_activities(curso.moodle_course_id)
