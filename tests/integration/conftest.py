@@ -26,6 +26,7 @@ from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
 from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
 from src.domain.ports.out_.cursos_client_port import CursosClientPort
+from src.domain.ports.out_.recursos_client_port import RecursosClientPort
 from src.domain.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
 from src.infrastructure.adapters.in_.main import app
 from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
@@ -115,6 +116,11 @@ class _StubCursosClient(CursosClientPort):
         return None
 
 
+class _StubRecursosClient(RecursosClientPort):
+    async def sync_recursos(self, actividades) -> None:  # noqa: ARG002
+        return None
+
+
 @pytest_asyncio.fixture
 async def client():
     repo = FakeLmsRepo()
@@ -122,9 +128,12 @@ async def client():
     events = _StubEventPublisher()
     trazabilidad = _StubTrazabilidadClient()
     cursos_client = _StubCursosClient()
+    recursos_client = _StubRecursosClient()
 
     app.dependency_overrides[get_sincronizar_moodle_uc] = lambda: (
-        SincronizarMoodleUseCase(moodle, repo, events, trazabilidad, cursos_client)
+        SincronizarMoodleUseCase(
+            moodle, repo, events, trazabilidad, cursos_client, recursos_client
+        )
     )
     app.dependency_overrides[get_consultar_cursos_uc] = lambda: (
         ConsultarCursosLmsUseCase(repo)

@@ -25,8 +25,10 @@ def use_case():
     trazabilidad.sync_interacciones.return_value = None
     cursos_client = AsyncMock()
     cursos_client.sync_cursos.return_value = None
+    recursos_client = AsyncMock()
+    recursos_client.sync_recursos.return_value = None
     return SincronizarMoodleUseCase(
-        moodle, repo, MagicMock(), trazabilidad, cursos_client
+        moodle, repo, MagicMock(), trazabilidad, cursos_client, recursos_client
     )
 
 
@@ -47,3 +49,9 @@ async def test_llama_api_por_curso(use_case):
 async def test_publica_evento(use_case):
     await use_case.execute(SincronizarMoodleCommand())
     use_case._event_publisher.publish.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_propaga_recursos(use_case):
+    await use_case.execute(SincronizarMoodleCommand())
+    use_case._recursos_client.sync_recursos.assert_called_once()
