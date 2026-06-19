@@ -170,6 +170,10 @@ class MoodleApiAdapter(MoodleApiPort):
             user_id = user.get("id")
             if not user_id:
                 continue
+            nombre = user.get("fullname") or " ".join(
+                filter(None, [user.get("firstname", ""), user.get("lastname", "")])
+            )
+            correo = user.get("email", "")
             for item in await self._get_grade_items(moodle_course_id, user_id):
                 graderaw = float(item["graderaw"])
                 grademax = float(item.get("grademax") or 100.0)
@@ -192,6 +196,8 @@ class MoodleApiAdapter(MoodleApiPort):
                         moodle_user_id=str(user_id),
                         moodle_course_id=moodle_course_id,
                         moodle_activity_id=instancia,
+                        nombre=nombre,
+                        correo=correo,
                         concepto=concepto,
                         accion="submit",
                         es_correcta=graderaw / grademax >= 0.5
