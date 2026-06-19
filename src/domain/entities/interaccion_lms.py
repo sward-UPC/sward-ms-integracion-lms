@@ -10,6 +10,10 @@ class InteraccionLMS:
     moodle_user_id: str = ""
     moodle_course_id: str = ""
     moodle_activity_id: str = ""
+    # Datos del estudiante en Moodle (para mostrarlos en el dashboard sin depender
+    # de que se haya registrado en SWARD).
+    nombre: str = ""
+    correo: str = ""
     # Concepto/skill = sección del curso a la que pertenece la actividad (para SAKT).
     concepto: str = ""
     accion: str = ""
