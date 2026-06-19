@@ -22,6 +22,7 @@ class TrazabilidadRestAdapter(TrazabilidadClientPort):
                 "correo": i.correo,
                 "concepto": i.concepto,
                 "es_correcta": bool(i.es_correcta),
+                "nota": float(i.nota),
                 "fecha_evento": i.fecha_evento.isoformat(),
                 "moodle_event_id": i.moodle_event_id or "",
             }

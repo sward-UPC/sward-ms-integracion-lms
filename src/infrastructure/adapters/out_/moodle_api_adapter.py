@@ -205,6 +205,9 @@ class MoodleApiAdapter(MoodleApiPort):
                         es_correcta=graderaw / grademax >= 0.5
                         if grademax > 0
                         else False,
+                        nota=round(graderaw / grademax * 100, 1)
+                        if grademax > 0
+                        else 0.0,
                         fecha_evento=fecha,
                     )
                 )
