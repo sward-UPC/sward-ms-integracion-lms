@@ -20,4 +20,6 @@ class InteraccionLMS:
     es_correcta: bool | None = None
     # Nota numérica 0-100 (graderaw/grademax). Para el dominio continuo por sección.
     nota: float = 0.0
+    # Enlace directo al módulo en Moodle (para abrirlo desde el panel docente).
+    url_modulo: str = ""
     fecha_evento: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

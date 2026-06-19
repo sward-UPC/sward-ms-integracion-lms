@@ -149,19 +149,22 @@ class MoodleApiAdapter(MoodleApiPort):
 
     async def _secciones_por_modulo(
         self, moodle_course_id: str
-    ) -> dict[tuple[str, str], str]:
-        """Mapa {(modname, instance): nombre_de_seccion} para asignar el concepto.
+    ) -> dict[tuple[str, str], dict[str, str]]:
+        """Mapa {(modname, instance): {"seccion", "url"}} para concepto y enlace.
 
-        El concepto/skill de SAKT es la sección del curso a la que pertenece la
-        actividad (core_course_get_contents devuelve secciones con sus módulos).
+        El concepto/skill de SAKT es la sección del curso; la url es el enlace
+        directo al módulo en Moodle (core_course_get_contents lo devuelve).
         """
         data = await self._call("core_course_get_contents", courseid=moodle_course_id)
-        mapa: dict[tuple[str, str], str] = {}
+        mapa: dict[tuple[str, str], dict[str, str]] = {}
         for section in data if isinstance(data, list) else []:
             nombre = section.get("name", "") or "General"
             for m in section.get("modules", []):
                 if m.get("modname") and m.get("instance") is not None:
-                    mapa[(str(m["modname"]), str(m["instance"]))] = nombre
+                    mapa[(str(m["modname"]), str(m["instance"]))] = {
+                        "seccion": nombre,
+                        "url": m.get("url", "") or "",
+                    }
         return mapa
 
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
@@ -186,11 +189,12 @@ class MoodleApiAdapter(MoodleApiPort):
                     else datetime.now(timezone.utc)
                 )
                 instancia = str(item.get("iteminstance", ""))
+                modinfo = secciones.get(
+                    (str(item.get("itemmodule", "")), instancia), {}
+                )
                 # Concepto = sección del curso; si no se resuelve, el nombre del ítem.
                 concepto = (
-                    secciones.get((str(item.get("itemmodule", "")), instancia))
-                    or item.get("itemname", "")
-                    or "General"
+                    modinfo.get("seccion") or item.get("itemname", "") or "General"
                 )
                 results.append(
                     InteraccionLMS(
@@ -201,6 +205,7 @@ class MoodleApiAdapter(MoodleApiPort):
                         nombre=nombre,
                         correo=correo,
                         concepto=concepto,
+                        url_modulo=modinfo.get("url", ""),
                         accion="submit",
                         es_correcta=graderaw / grademax >= 0.5
                         if grademax > 0
