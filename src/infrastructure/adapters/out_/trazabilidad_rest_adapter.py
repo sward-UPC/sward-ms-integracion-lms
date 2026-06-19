@@ -24,6 +24,7 @@ class TrazabilidadRestAdapter(TrazabilidadClientPort):
                 "es_correcta": bool(i.es_correcta),
                 "nota": float(i.nota),
                 "url_modulo": i.url_modulo,
+                "nombre_actividad": i.nombre_actividad,
                 "fecha_evento": i.fecha_evento.isoformat(),
                 "moodle_event_id": i.moodle_event_id or "",
             }
