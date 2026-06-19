@@ -196,6 +196,8 @@ class MoodleApiAdapter(MoodleApiPort):
                 concepto = (
                     modinfo.get("seccion") or item.get("itemname", "") or "General"
                 )
+                # Nombre real de la actividad en Moodle (independiente de la sección).
+                nombre_actividad = (item.get("itemname") or "").strip()
                 results.append(
                     InteraccionLMS(
                         moodle_event_id=f"{user_id}-{instancia}",
@@ -206,6 +208,7 @@ class MoodleApiAdapter(MoodleApiPort):
                         correo=correo,
                         concepto=concepto,
                         url_modulo=modinfo.get("url", ""),
+                        nombre_actividad=nombre_actividad,
                         accion="submit",
                         es_correcta=graderaw / grademax >= 0.5
                         if grademax > 0
