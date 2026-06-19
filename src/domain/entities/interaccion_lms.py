@@ -18,4 +18,6 @@ class InteraccionLMS:
     concepto: str = ""
     accion: str = ""
     es_correcta: bool | None = None
+    # Nota numérica 0-100 (graderaw/grademax). Para el dominio continuo por sección.
+    nota: float = 0.0
     fecha_evento: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
