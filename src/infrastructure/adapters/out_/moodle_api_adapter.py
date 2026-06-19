@@ -32,7 +32,9 @@ class MoodleApiAdapter(MoodleApiPort):
                 nombre=c.get("fullname", ""),
                 codigo=c.get("shortname", ""),
             )
+            # Excluye el curso-sitio de Moodle (id 1 = portada, no es un curso real).
             for c in (data if isinstance(data, list) else [])
+            if str(c.get("id")) != "1"
         ]
 
     async def get_activities(self, moodle_course_id: str) -> list[ActividadLMS]:
