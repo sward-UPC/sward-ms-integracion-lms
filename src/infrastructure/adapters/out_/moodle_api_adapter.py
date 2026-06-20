@@ -41,6 +41,7 @@ class MoodleApiAdapter(MoodleApiPort):
         data = await self._call("core_course_get_contents", courseid=moodle_course_id)
         acts = []
         for section in data if isinstance(data, list) else []:
+            seccion = section.get("name", "") or ""
             for m in section.get("modules", []):
                 acts.append(
                     ActividadLMS(
@@ -48,6 +49,8 @@ class MoodleApiAdapter(MoodleApiPort):
                         moodle_course_id=moodle_course_id,
                         nombre=m.get("name", ""),
                         tipo=m.get("modname", ""),
+                        url=m.get("url", "") or "",
+                        seccion=seccion,
                     )
                 )
         return acts
