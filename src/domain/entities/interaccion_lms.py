@@ -22,6 +22,8 @@ class InteraccionLMS:
     nota: float = 0.0
     # Enlace directo al módulo en Moodle (para abrirlo desde el panel docente).
     url_modulo: str = ""
+    # Tipo de módulo de Moodle (assign, quiz, page, url, resource, book, etc.).
+    tipo_recurso: str = ""
     # Nombre real de la actividad en Moodle (p.ej. "Práctica 5: Normalización").
     nombre_actividad: str = ""
     fecha_evento: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

@@ -222,6 +222,8 @@ class MoodleApiAdapter(MoodleApiPort):
                 )
                 # Nombre real de la actividad en Moodle (independiente de la sección).
                 nombre_actividad = (item.get("itemname") or "").strip()
+                # Tipo de módulo de Moodle (assign, quiz, page, url, resource, ...).
+                tipo_recurso = (item.get("itemmodule") or "").strip().lower()
                 results.append(
                     InteraccionLMS(
                         moodle_event_id=f"{user_id}-{instancia}",
@@ -233,6 +235,7 @@ class MoodleApiAdapter(MoodleApiPort):
                         concepto=concepto,
                         url_modulo=modinfo.get("url", ""),
                         nombre_actividad=nombre_actividad,
+                        tipo_recurso=tipo_recurso,
                         accion="submit",
                         es_correcta=graderaw / grademax >= 0.5
                         if grademax > 0
