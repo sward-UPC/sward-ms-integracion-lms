@@ -21,6 +21,8 @@ class RecursosRestAdapter(RecursosClientPort):
                 "moodle_course_id": str(a.moodle_course_id),
                 "titulo": a.nombre,
                 "tipo": a.tipo or "",
+                "url": a.url,
+                "seccion": a.seccion,
             }
             for a in actividades
         ]
