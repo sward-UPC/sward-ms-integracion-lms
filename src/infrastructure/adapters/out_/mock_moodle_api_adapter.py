@@ -109,3 +109,6 @@ class MockMoodleApiAdapter(MoodleApiPort):
                 accion="viewed",
             ),
         ]
+
+    async def get_resource_views(self, moodle_course_id: str) -> list[InteraccionLMS]:
+        return []

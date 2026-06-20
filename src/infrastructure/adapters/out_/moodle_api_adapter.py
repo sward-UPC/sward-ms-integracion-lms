@@ -191,6 +191,88 @@ class MoodleApiAdapter(MoodleApiPort):
                     }
         return mapa
 
+    async def get_resource_views(self, moodle_course_id: str) -> list[InteraccionLMS]:
+        """Interacciones tipo 'vista' de lecturas/recursos no calificados.
+
+        Lee el estado de finalización ("completar al ver") por usuario y emite
+        una InteraccionLMS por cada lectura COMPLETADA (es_vista=True, sin nota).
+        """
+        import asyncio
+
+        LECTURA = {"page", "url", "resource", "book", "lesson", "folder"}
+        try:
+            contenidos = await self._call(
+                "core_course_get_contents", courseid=moodle_course_id
+            )
+        except Exception:
+            return []
+        modmap: dict = {}
+        for sec in contenidos if isinstance(contenidos, list) else []:
+            seccion = sec.get("name", "") or ""
+            for m in sec.get("modules", []):
+                if (m.get("modname", "") or "").lower() in LECTURA:
+                    modmap[m.get("id")] = {
+                        "seccion": seccion,
+                        "nombre": m.get("name", "") or "",
+                        "tipo": (m.get("modname", "") or "").lower(),
+                        "url": m.get("url", "") or "",
+                        "instance": str(m.get("instance", "")),
+                    }
+        if not modmap:
+            return []
+        usuarios = await self._get_enrolled_users(moodle_course_id)
+        sem = asyncio.Semaphore(8)
+
+        async def _vistas_de(user):
+            uid = user.get("id")
+            if not uid:
+                return []
+            async with sem:
+                try:
+                    data = await self._call(
+                        "core_completion_get_activities_completion_status",
+                        courseid=moodle_course_id,
+                        userid=uid,
+                    )
+                except Exception:
+                    return []
+            out = []
+            for st in data.get("statuses", []) if isinstance(data, dict) else []:
+                if st.get("state") not in (1, 2):
+                    continue
+                info = modmap.get(st.get("cmid"))
+                if not info:
+                    continue
+                instancia = info["instance"] or str(st.get("cmid"))
+                nombre = user.get("fullname") or " ".join(
+                    filter(
+                        None,
+                        [user.get("firstname", ""), user.get("lastname", "")],
+                    )
+                )
+                out.append(
+                    InteraccionLMS(
+                        moodle_event_id=f"vista-{uid}-{instancia}",
+                        moodle_user_id=str(uid),
+                        moodle_course_id=moodle_course_id,
+                        moodle_activity_id=instancia,
+                        nombre=nombre,
+                        correo=user.get("email", ""),
+                        concepto=info["seccion"],
+                        url_modulo=info["url"],
+                        nombre_actividad=info["nombre"],
+                        tipo_recurso=info["tipo"],
+                        accion="view",
+                        es_correcta=True,
+                        nota=0.0,
+                        es_vista=True,
+                    )
+                )
+            return out
+
+        resultados = await asyncio.gather(*[_vistas_de(u) for u in usuarios])
+        return [i for sub in resultados for i in sub]
+
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
         users = await self._get_enrolled_users(moodle_course_id)
         secciones = await self._secciones_por_modulo(moodle_course_id)

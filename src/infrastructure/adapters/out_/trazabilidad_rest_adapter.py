@@ -26,6 +26,7 @@ class TrazabilidadRestAdapter(TrazabilidadClientPort):
                 "url_modulo": i.url_modulo,
                 "tipo_recurso": i.tipo_recurso,
                 "nombre_actividad": i.nombre_actividad,
+                "es_vista": i.es_vista,
                 "fecha_evento": i.fecha_evento.isoformat(),
                 "moodle_event_id": i.moodle_event_id or "",
             }
