@@ -50,12 +50,16 @@ class MockMoodleApiAdapter(MoodleApiPort):
                 moodle_course_id=moodle_course_id,
                 nombre="Quiz 1",
                 tipo="quiz",
+                url=f"https://moodle.example/mod/quiz/view.php?id={moodle_course_id}-1",
+                seccion="Semana 1-2: Fundamentos",
             ),
             ActividadLMS(
                 moodle_activity_id=f"{moodle_course_id}-act-2",
                 moodle_course_id=moodle_course_id,
                 nombre="Tarea 1",
                 tipo="assign",
+                url=f"https://moodle.example/mod/assign/view.php?id={moodle_course_id}-2",
+                seccion="Semana 3-4: Estructuras",
             ),
         ]
 
