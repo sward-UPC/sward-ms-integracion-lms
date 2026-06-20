@@ -46,6 +46,8 @@ class SincronizarMoodleUseCase:
             events = await self._moodle.get_events(curso.moodle_course_id)
             total += await self._repo.save_interacciones(events)
             todas_las_interacciones.extend(events)
+            vistas = await self._moodle.get_resource_views(curso.moodle_course_id)
+            todas_las_interacciones.extend(vistas)
         self._event_publisher.publish(
             DatosLmsSincronizadosEvent(registros_procesados=total)
         )
