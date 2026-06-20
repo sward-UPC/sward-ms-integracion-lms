@@ -9,3 +9,5 @@ class ActividadLMS:
     moodle_course_id: str = ""
     nombre: str = ""
     tipo: str = ""
+    url: str = ""
+    seccion: str = ""
