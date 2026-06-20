@@ -15,6 +15,14 @@ class MoodleApiPort(ABC):
     @abstractmethod
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]: ...
     @abstractmethod
+    async def get_course_resources(self, moodle_course_id: str) -> list[dict]:
+        """Módulos del curso por sección (lecturas/recursos incluidos).
+
+        Retorna list[dict] con seccion, nombre, tipo (modname Moodle) y url.
+        """
+        ...
+
+    @abstractmethod
     async def buscar_por_correo(self, correo: str) -> dict | None:
         """Busca un usuario en Moodle por correo electrónico.
 

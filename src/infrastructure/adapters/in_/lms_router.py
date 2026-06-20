@@ -277,6 +277,27 @@ async def get_activities(
 
 
 @router.get(
+    "/courses/{moodle_course_id}/resources",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Recursos del curso por sección (tipo + URL)"},
+        401: {"description": "No autorizado. JWT inválido o expirado."},
+    },
+)
+async def get_course_resources(
+    moodle_course_id: str,
+    moodle: MoodleApiPort = Depends(get_moodle_adapter),
+) -> list[dict]:
+    """Recursos/módulos del curso por sección, en vivo desde Moodle.
+
+    Incluye lecturas/páginas (page, resource, url, book), no solo actividades
+    calificadas, con su URL directa. Permite sugerir material concreto para
+    reforzar una sección débil. **Auth:** JWT
+    """
+    return await moodle.get_course_resources(moodle_course_id)
+
+
+@router.get(
     "/grades",
     status_code=status.HTTP_200_OK,
     response_model=list[CalificacionLMSResponse],

@@ -52,6 +52,30 @@ class MoodleApiAdapter(MoodleApiPort):
                 )
         return acts
 
+    async def get_course_resources(self, moodle_course_id: str) -> list[dict]:
+        """Lista TODOS los módulos del curso por sección, con tipo y URL.
+
+        A diferencia de get_events (solo actividades calificadas), incluye
+        lecturas/páginas/recursos (page, resource, url, book…), para poder
+        sugerir material concreto de Moodle al reforzar una sección.
+        """
+        data = await self._call("core_course_get_contents", courseid=moodle_course_id)
+        out: list[dict] = []
+        for section in data if isinstance(data, list) else []:
+            nombre = section.get("name", "") or ""
+            for m in section.get("modules", []):
+                if (m.get("modname", "") or "").lower() == "label":
+                    continue  # las etiquetas no son recursos navegables
+                out.append(
+                    {
+                        "seccion": nombre,
+                        "nombre": m.get("name", "") or "",
+                        "tipo": (m.get("modname", "") or "").lower(),
+                        "url": m.get("url", "") or "",
+                    }
+                )
+        return out
+
     async def _get_enrolled_users(self, moodle_course_id: str) -> list[dict]:
         data = await self._call(
             "core_enrol_get_enrolled_users", courseid=moodle_course_id
