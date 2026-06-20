@@ -59,6 +59,16 @@ class MockMoodleApiAdapter(MoodleApiPort):
             ),
         ]
 
+    async def get_course_resources(self, moodle_course_id: str) -> list[dict]:
+        return [
+            {
+                "seccion": "Semana 1-2: Fundamentos",
+                "nombre": "Lectura: Introducción",
+                "tipo": "page",
+                "url": f"https://moodle.example/mod/page/view.php?id={moodle_course_id}-1",
+            },
+        ]
+
     async def get_grades(self, moodle_course_id: str) -> list[CalificacionLMS]:
         return [
             CalificacionLMS(
