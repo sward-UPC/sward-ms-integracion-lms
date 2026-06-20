@@ -16,6 +16,7 @@ def use_case():
     moodle.get_activities.return_value = []
     moodle.get_grades.return_value = []
     moodle.get_events.return_value = []
+    moodle.get_resource_views.return_value = []
     repo = AsyncMock()
     repo.save_cursos.return_value = 1
     repo.save_actividades.return_value = 0
