@@ -26,4 +26,7 @@ class InteraccionLMS:
     tipo_recurso: str = ""
     # Nombre real de la actividad en Moodle (p.ej. "Práctica 5: Normalización").
     nombre_actividad: str = ""
+    # True si la interacción es una "vista" de una lectura/recurso no calificado
+    # (alimenta el motor de preferencias por formato; no aporta nota).
+    es_vista: bool = False
     fecha_evento: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
