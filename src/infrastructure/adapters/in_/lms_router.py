@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.application.use_cases.consultar_actividades_lms import (
@@ -464,8 +464,6 @@ async def lookup_usuario_moodle(
 
     **Auth:** X-Service-Key | **SLA:** <2s (depende de Moodle)
     """
-    from fastapi import HTTPException
-
     usuario = await moodle.buscar_por_correo(correo)
     if usuario is None:
         raise HTTPException(
