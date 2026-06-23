@@ -5,24 +5,32 @@ from src.domain.entities.actividad_lms import ActividadLMS
 from src.domain.entities.calificacion_lms import CalificacionLMS
 from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
+from src.domain.errors import LmsNoDisponibleError
 from src.domain.ports.out_.moodle_api_port import MoodleApiPort
 from src.infrastructure.config.settings import settings
 
 
 class MoodleApiAdapter(MoodleApiPort):
     async def _call(self, function: str, **params) -> list | dict:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            r = await client.get(
-                f"{settings.moodle_base_url}/webservice/rest/server.php",
-                params={
-                    "wstoken": settings.moodle_token,
-                    "moodlewsrestformat": "json",
-                    "wsfunction": function,
-                    **params,
-                },
-            )
-            r.raise_for_status()
-            return r.json()
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                r = await client.get(
+                    f"{settings.moodle_base_url}/webservice/rest/server.php",
+                    params={
+                        "wstoken": settings.moodle_token,
+                        "moodlewsrestformat": "json",
+                        "wsfunction": function,
+                        **params,
+                    },
+                )
+                r.raise_for_status()
+                return r.json()
+        except httpx.HTTPError as exc:
+            # No filtramos el error crudo de httpx al núcleo: lo traducimos a un
+            # error de dominio que el handler central mapeará a HTTP.
+            raise LmsNoDisponibleError(
+                f"Fallo al invocar Moodle ({function}): {exc}"
+            ) from exc
 
     async def get_courses(self) -> list[CursoLMS]:
         data = await self._call("core_course_get_courses")
@@ -121,19 +129,24 @@ class MoodleApiAdapter(MoodleApiPort):
         return results
 
     async def buscar_por_correo(self, correo: str) -> dict | None:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            r = await client.get(
-                f"{settings.moodle_base_url}/webservice/rest/server.php",
-                params={
-                    "wstoken": settings.moodle_token,
-                    "moodlewsrestformat": "json",
-                    "wsfunction": "core_user_get_users",
-                    "criteria[0][key]": "email",
-                    "criteria[0][value]": correo,
-                },
-            )
-            r.raise_for_status()
-            data = r.json()
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                r = await client.get(
+                    f"{settings.moodle_base_url}/webservice/rest/server.php",
+                    params={
+                        "wstoken": settings.moodle_token,
+                        "moodlewsrestformat": "json",
+                        "wsfunction": "core_user_get_users",
+                        "criteria[0][key]": "email",
+                        "criteria[0][value]": correo,
+                    },
+                )
+                r.raise_for_status()
+                data = r.json()
+        except httpx.HTTPError as exc:
+            raise LmsNoDisponibleError(
+                f"Fallo al buscar usuario en Moodle: {exc}"
+            ) from exc
 
         users = data.get("users", []) if isinstance(data, dict) else []
         if not users:

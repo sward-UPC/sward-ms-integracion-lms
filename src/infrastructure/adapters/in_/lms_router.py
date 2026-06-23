@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.application.use_cases.buscar_usuario_moodle import BuscarUsuarioMoodleUseCase
 from src.application.use_cases.consultar_actividades_lms import (
     ConsultarActividadesLmsUseCase,
 )
@@ -11,17 +12,20 @@ from src.application.use_cases.consultar_cursos_lms import ConsultarCursosLmsUse
 from src.application.use_cases.consultar_interacciones_lms import (
     ConsultarInteraccionesLmsUseCase,
 )
+from src.application.use_cases.consultar_recursos_curso_lms import (
+    ConsultarRecursosCursoLmsUseCase,
+)
 from src.application.use_cases.sincronizar_moodle import (
     SincronizarMoodleCommand,
     SincronizarMoodleUseCase,
 )
-from src.domain.ports.out_.moodle_api_port import MoodleApiPort
 from src.infrastructure.dependencies import (
+    get_buscar_usuario_moodle_uc,
     get_consultar_actividades_uc,
     get_consultar_calificaciones_uc,
     get_consultar_cursos_uc,
     get_consultar_interacciones_uc,
-    get_moodle_adapter,
+    get_consultar_recursos_curso_uc,
     get_sincronizar_moodle_uc,
     require_jwt,
     require_service_key,
@@ -161,6 +165,27 @@ class InteraccionLMSResponse(BaseModel):
     )
 
 
+class RecursoCursoResponse(BaseModel):
+    """Recurso/módulo de un curso del LMS (por sección, con tipo y URL)."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "seccion": "Semana 1-2: Fundamentos",
+                "nombre": "Lectura: Introducción",
+                "tipo": "page",
+                "url": "https://moodle.example/mod/page/view.php?id=1",
+            }
+        },
+    )
+
+    seccion: str = Field(description="Sección del curso a la que pertenece el recurso")
+    nombre: str = Field(description="Nombre del recurso/módulo en Moodle")
+    tipo: str = Field(description="Tipo de módulo de Moodle (page, resource, url, ...)")
+    url: str = Field(description="Enlace directo al recurso en Moodle")
+
+
 class SyncResultResponse(BaseModel):
     """Respuesta que contiene el resultado de la sincronización."""
 
@@ -279,22 +304,33 @@ async def get_activities(
 @router.get(
     "/courses/{moodle_course_id}/resources",
     status_code=status.HTTP_200_OK,
+    response_model=list[RecursoCursoResponse],
     responses={
         200: {"description": "Recursos del curso por sección (tipo + URL)"},
         401: {"description": "No autorizado. JWT inválido o expirado."},
+        502: {"description": "El LMS (Moodle) no está disponible."},
     },
 )
 async def get_course_resources(
     moodle_course_id: str,
-    moodle: MoodleApiPort = Depends(get_moodle_adapter),
-) -> list[dict]:
+    uc: ConsultarRecursosCursoLmsUseCase = Depends(get_consultar_recursos_curso_uc),
+):
     """Recursos/módulos del curso por sección, en vivo desde Moodle.
 
     Incluye lecturas/páginas (page, resource, url, book), no solo actividades
     calificadas, con su URL directa. Permite sugerir material concreto para
     reforzar una sección débil. **Auth:** JWT
     """
-    return await moodle.get_course_resources(moodle_course_id)
+    recursos = await uc.execute(moodle_course_id)
+    return [
+        {
+            "seccion": r.get("seccion", ""),
+            "nombre": r.get("nombre", ""),
+            "tipo": r.get("tipo", ""),
+            "url": r.get("url", ""),
+        }
+        for r in recursos
+    ]
 
 
 @router.get(
@@ -455,7 +491,7 @@ class UsuarioMoodleResponse(BaseModel):
 )
 async def lookup_usuario_moodle(
     correo: str = Query(..., description="Correo institucional a buscar en Moodle"),
-    moodle: MoodleApiPort = Depends(get_moodle_adapter),
+    uc: BuscarUsuarioMoodleUseCase = Depends(get_buscar_usuario_moodle_uc),
 ):
     """Busca un usuario en Moodle por correo electrónico.
 
@@ -464,13 +500,14 @@ async def lookup_usuario_moodle(
 
     **Auth:** X-Service-Key | **SLA:** <2s (depende de Moodle)
     """
-    usuario = await moodle.buscar_por_correo(correo)
-    if usuario is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Correo no registrado en la plataforma educativa.",
-        )
-    return usuario
+    usuario = await uc.execute(correo)
+    return {
+        "moodle_user_id": usuario.moodle_user_id,
+        "nombre": usuario.nombre,
+        "apellido": usuario.apellido,
+        "correo": usuario.correo,
+        "rol": usuario.rol,
+    }
 
 
 @internal_router.post(
