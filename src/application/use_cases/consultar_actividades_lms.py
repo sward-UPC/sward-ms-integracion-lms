@@ -1,5 +1,5 @@
 from src.domain.entities.actividad_lms import ActividadLMS
-from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.application.ports.out_.lms_repository_port import LmsRepositoryPort
 
 
 class ConsultarActividadesLmsUseCase:

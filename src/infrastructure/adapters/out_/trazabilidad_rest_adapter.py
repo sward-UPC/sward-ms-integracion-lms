@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from src.domain.entities.interaccion_lms import InteraccionLMS
-from src.domain.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
+from src.application.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
 from src.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
