@@ -6,7 +6,7 @@ from src.domain.entities.calificacion_lms import CalificacionLMS
 from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
 from src.domain.errors import LmsNoDisponibleError
-from src.domain.ports.out_.moodle_api_port import MoodleApiPort
+from src.application.ports.out_.moodle_api_port import MoodleApiPort
 from src.infrastructure.config.settings import settings
 
 
