@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from src.domain.entities.actividad_lms import ActividadLMS
-from src.domain.ports.out_.recursos_client_port import RecursosClientPort
+from src.application.ports.out_.recursos_client_port import RecursosClientPort
 from src.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)

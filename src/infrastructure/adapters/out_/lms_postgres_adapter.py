@@ -4,7 +4,7 @@ from src.domain.entities.actividad_lms import ActividadLMS
 from src.domain.entities.calificacion_lms import CalificacionLMS
 from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
-from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.application.ports.out_.lms_repository_port import LmsRepositoryPort
 from src.infrastructure.db.models.lms_models import (
     ActividadLmsModel,
     CalificacionLmsModel,
