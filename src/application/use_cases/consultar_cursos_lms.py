@@ -1,5 +1,5 @@
 from src.domain.entities.curso_lms import CursoLMS
-from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.application.ports.out_.lms_repository_port import LmsRepositoryPort
 
 
 class ConsultarCursosLmsUseCase:

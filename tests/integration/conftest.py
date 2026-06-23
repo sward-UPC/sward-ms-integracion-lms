@@ -24,10 +24,10 @@ from src.domain.entities.actividad_lms import ActividadLMS
 from src.domain.entities.calificacion_lms import CalificacionLMS
 from src.domain.entities.curso_lms import CursoLMS
 from src.domain.entities.interaccion_lms import InteraccionLMS
-from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
-from src.domain.ports.out_.cursos_client_port import CursosClientPort
-from src.domain.ports.out_.recursos_client_port import RecursosClientPort
-from src.domain.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
+from src.application.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.application.ports.out_.cursos_client_port import CursosClientPort
+from src.application.ports.out_.recursos_client_port import RecursosClientPort
+from src.application.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
 from src.infrastructure.adapters.in_.main import app
 from src.infrastructure.adapters.out_.mock_moodle_api_adapter import (
     MockMoodleApiAdapter,

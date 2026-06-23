@@ -1,5 +1,5 @@
 from src.domain.entities.calificacion_lms import CalificacionLMS
-from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.application.ports.out_.lms_repository_port import LmsRepositoryPort
 
 
 class ConsultarCalificacionesLmsUseCase:
