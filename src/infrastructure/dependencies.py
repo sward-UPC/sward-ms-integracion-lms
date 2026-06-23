@@ -14,6 +14,12 @@ from src.application.use_cases.consultar_cursos_lms import ConsultarCursosLmsUse
 from src.application.use_cases.consultar_interacciones_lms import (
     ConsultarInteraccionesLmsUseCase,
 )
+from src.application.use_cases.buscar_usuario_moodle import (
+    BuscarUsuarioMoodleUseCase,
+)
+from src.application.use_cases.consultar_recursos_curso_lms import (
+    ConsultarRecursosCursoLmsUseCase,
+)
 from src.application.use_cases.sincronizar_moodle import SincronizarMoodleUseCase
 from src.infrastructure.adapters.out_.eventbridge_adapter import EventBridgeAdapter
 from src.infrastructure.adapters.out_.lms_postgres_adapter import LmsPostgresAdapter
@@ -43,6 +49,14 @@ def get_eventbridge_adapter() -> EventBridgeAdapter:
 
 def get_moodle_adapter():
     return MockMoodleApiAdapter() if settings.moodle_mock else MoodleApiAdapter()
+
+
+def get_consultar_recursos_curso_uc() -> ConsultarRecursosCursoLmsUseCase:
+    return ConsultarRecursosCursoLmsUseCase(get_moodle_adapter())
+
+
+def get_buscar_usuario_moodle_uc() -> BuscarUsuarioMoodleUseCase:
+    return BuscarUsuarioMoodleUseCase(get_moodle_adapter())
 
 
 def get_consultar_cursos_uc(

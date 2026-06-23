@@ -7,6 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from scalar_fastapi import get_scalar_api_reference
 
+from src.domain.errors import (
+    LmsNoDisponibleError,
+    UsuarioMoodleNoEncontradoError,
+)
 from src.infrastructure.adapters.in_.lms_router import (
     internal_router as lms_internal_router,
 )
@@ -74,6 +78,29 @@ async def security_headers(request: Request, call_next):
             "max-age=31536000; includeSubDomains"
         )
     return response
+
+
+@app.exception_handler(UsuarioMoodleNoEncontradoError)
+async def usuario_moodle_no_encontrado_handler(
+    request: Request, exc: UsuarioMoodleNoEncontradoError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Correo no registrado en la plataforma educativa."},
+    )
+
+
+@app.exception_handler(LmsNoDisponibleError)
+async def lms_no_disponible_handler(
+    request: Request, exc: LmsNoDisponibleError
+) -> JSONResponse:
+    logger.warning(
+        "LMS no disponible en %s %s: %s", request.method, request.url.path, exc
+    )
+    return JSONResponse(
+        status_code=502,
+        content={"detail": "El LMS (Moodle) no está disponible en este momento."},
+    )
 
 
 @app.exception_handler(Exception)
