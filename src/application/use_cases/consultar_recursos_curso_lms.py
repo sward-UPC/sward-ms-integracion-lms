@@ -1,4 +1,4 @@
-from src.domain.ports.out_.moodle_api_port import MoodleApiPort
+from src.application.ports.out_.moodle_api_port import MoodleApiPort
 
 
 class ConsultarRecursosCursoLmsUseCase:

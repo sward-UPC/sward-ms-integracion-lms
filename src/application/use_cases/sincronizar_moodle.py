@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from src.domain.events.datos_lms_sincronizados_event import DatosLmsSincronizadosEvent
-from src.domain.ports.out_.cursos_client_port import CursosClientPort
-from src.domain.ports.out_.event_publisher_port import EventPublisherPort
-from src.domain.ports.out_.lms_repository_port import LmsRepositoryPort
-from src.domain.ports.out_.moodle_api_port import MoodleApiPort
-from src.domain.ports.out_.recursos_client_port import RecursosClientPort
-from src.domain.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
+from src.application.ports.out_.cursos_client_port import CursosClientPort
+from src.application.ports.out_.event_publisher_port import EventPublisherPort
+from src.application.ports.out_.lms_repository_port import LmsRepositoryPort
+from src.application.ports.out_.moodle_api_port import MoodleApiPort
+from src.application.ports.out_.recursos_client_port import RecursosClientPort
+from src.application.ports.out_.trazabilidad_client_port import TrazabilidadClientPort
 
 
 @dataclass
