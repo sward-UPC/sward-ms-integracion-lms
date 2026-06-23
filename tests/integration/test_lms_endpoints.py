@@ -5,6 +5,7 @@ import pytest
 SYNC = "/lms/sync"
 COURSES = "/lms/courses"
 ACTIVITIES = "/lms/activities"
+LOOKUP = "/lms/users/lookup"
 HEALTH = "/health"
 
 
@@ -59,3 +60,18 @@ async def test_sync_persiste_actividades(client):
     assert resp.status_code == 200
     # 3 cursos x 2 actividades cada uno.
     assert len(resp.json()) == 6
+
+
+@pytest.mark.asyncio
+async def test_lookup_usuario_existente(client):
+    resp = await client.get(LOOKUP, params={"correo": "docente01@sward.edu"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["moodle_user_id"] == 2
+    assert body["rol"] == "docente"
+
+
+@pytest.mark.asyncio
+async def test_lookup_usuario_inexistente_retorna_404(client):
+    resp = await client.get(LOOKUP, params={"correo": "nadie@sward.edu"})
+    assert resp.status_code == 404
