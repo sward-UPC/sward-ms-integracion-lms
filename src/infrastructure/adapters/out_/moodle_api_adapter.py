@@ -190,10 +190,15 @@ class MoodleApiAdapter(MoodleApiPort):
     async def _secciones_por_modulo(
         self, moodle_course_id: str
     ) -> dict[tuple[str, str], dict[str, str]]:
-        """Mapa {(modname, instance): {"seccion", "url"}} para concepto y enlace.
+        """Mapa {(modname, instance): {"seccion", "url", "cmid"}}.
 
         El concepto/skill de SAKT es la sección del curso; la url es el enlace
         directo al módulo en Moodle (core_course_get_contents lo devuelve).
+
+        El `cmid` (id del módulo dentro del curso) es la identidad estable de una
+        actividad: es único en todo Moodle. La `instance` NO lo es —numera aparte
+        cada tipo de módulo—, así que la tarea 1 y el cuestionario 1 comparten
+        instancia y se pisan entre sí al deduplicar.
         """
         data = await self._call("core_course_get_contents", courseid=moodle_course_id)
         mapa: dict[tuple[str, str], dict[str, str]] = {}
@@ -204,6 +209,7 @@ class MoodleApiAdapter(MoodleApiPort):
                     mapa[(str(m["modname"]), str(m["instance"]))] = {
                         "seccion": nombre,
                         "url": m.get("url", "") or "",
+                        "cmid": str(m.get("id", "")),
                     }
         return mapa
 
@@ -259,7 +265,8 @@ class MoodleApiAdapter(MoodleApiPort):
                 info = modmap.get(st.get("cmid"))
                 if not info:
                     continue
-                instancia = info["instance"] or str(st.get("cmid"))
+                # Mismo criterio que arriba: el cmid identifica la actividad.
+                instancia = str(st.get("cmid") or info.get("cmid") or "")
                 nombre = user.get("fullname") or " ".join(
                     filter(
                         None,
@@ -322,12 +329,17 @@ class MoodleApiAdapter(MoodleApiPort):
                 nombre_actividad = (item.get("itemname") or "").strip()
                 # Tipo de módulo de Moodle (assign, quiz, page, url, resource, ...).
                 tipo_recurso = (item.get("itemmodule") or "").strip().lower()
+                # Identidad de la actividad: el cmid, no la instancia. Con la
+                # instancia, "tarea 1" y "cuestionario 1" generan el mismo
+                # moodle_event_id y el upsert de trazabilidad deja una sola fila,
+                # con el curso y el concepto de la última en escribirse.
+                cmid = modinfo.get("cmid") or instancia
                 results.append(
                     InteraccionLMS(
-                        moodle_event_id=f"{user_id}-{instancia}",
+                        moodle_event_id=f"{user_id}-{cmid}",
                         moodle_user_id=str(user_id),
                         moodle_course_id=moodle_course_id,
-                        moodle_activity_id=instancia,
+                        moodle_activity_id=cmid,
                         nombre=nombre,
                         correo=correo,
                         concepto=concepto,
