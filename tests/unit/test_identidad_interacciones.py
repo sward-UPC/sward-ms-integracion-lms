@@ -19,8 +19,20 @@ CONTENIDOS = [
     {
         "name": "Introducción a los Algoritmos",
         "modules": [
-            {"id": 101, "modname": "assign", "instance": 1, "name": "Práctica 1", "url": "u1"},
-            {"id": 102, "modname": "quiz", "instance": 1, "name": "Quiz 1", "url": "u2"},
+            {
+                "id": 101,
+                "modname": "assign",
+                "instance": 1,
+                "name": "Práctica 1",
+                "url": "u1",
+            },
+            {
+                "id": 102,
+                "modname": "quiz",
+                "instance": 1,
+                "name": "Quiz 1",
+                "url": "u2",
+            },
         ],
     }
 ]
@@ -59,7 +71,9 @@ def _adaptador_falso(monkeypatch):
         if fn == "core_course_get_contents":
             return CONTENIDOS
         if fn == "core_enrol_get_enrolled_users":
-            return [{"id": 5, "fullname": "Estudiante 05", "email": "e05@sward-test.com"}]
+            return [
+                {"id": 5, "fullname": "Estudiante 05", "email": "e05@sward-test.com"}
+            ]
         if fn == "gradereport_user_get_grade_items":
             return GRADE_ITEMS
         return []
@@ -69,7 +83,9 @@ def _adaptador_falso(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_dos_actividades_con_la_misma_instancia_no_comparten_identidad(monkeypatch):
+async def test_dos_actividades_con_la_misma_instancia_no_comparten_identidad(
+    monkeypatch,
+):
     adapter = _adaptador_falso(monkeypatch)
 
     interacciones = await adapter.get_events("2")
