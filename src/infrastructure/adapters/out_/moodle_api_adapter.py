@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import httpx
 from src.domain.entities.actividad_lms import ActividadLMS
@@ -8,6 +9,23 @@ from src.domain.entities.interaccion_lms import InteraccionLMS
 from src.domain.errors import LmsNoDisponibleError
 from src.application.ports.out_.moodle_api_port import MoodleApiPort
 from src.infrastructure.config.settings import settings
+
+
+# Un enlace de Moodle (mod_url) no dice si es un video: se deduce del sitio al
+# que apunta. Así SWARD puede filtrar por formato «Video» (HU-026).
+SITIOS_DE_VIDEO = ("youtube.com", "youtu.be", "vimeo.com")
+
+
+def tipo_actividad(modulo: dict) -> str:
+    """Tipo de la actividad: el módulo de Moodle, o «video» si es un enlace a video."""
+    tipo = modulo.get("modname", "") or ""
+    if tipo != "url":
+        return tipo
+    for contenido in modulo.get("contents") or []:
+        sitio = (urlparse(contenido.get("fileurl", "") or "").hostname or "").lower()
+        if any(sitio == s or sitio.endswith("." + s) for s in SITIOS_DE_VIDEO):
+            return "video"
+    return tipo
 
 
 class MoodleApiAdapter(MoodleApiPort):
@@ -56,7 +74,7 @@ class MoodleApiAdapter(MoodleApiPort):
                         moodle_activity_id=str(m["id"]),
                         moodle_course_id=moodle_course_id,
                         nombre=m.get("name", ""),
-                        tipo=m.get("modname", ""),
+                        tipo=tipo_actividad(m),
                         url=m.get("url", "") or "",
                         seccion=seccion,
                     )
