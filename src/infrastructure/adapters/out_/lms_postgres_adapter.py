@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.entities.actividad_lms import ActividadLMS
 from src.domain.entities.calificacion_lms import CalificacionLMS
@@ -132,17 +133,38 @@ class LmsPostgresAdapter(LmsRepositoryPort):
         ]
 
     async def save_interacciones(self, interacciones: list[InteraccionLMS]) -> int:
+        """Guarda las interacciones; una fila por evento de Moodle.
+
+        Cada sincronización trae de nuevo lo mismo que la anterior, más lo nuevo.
+        Sin el UPSERT, la tabla acumulaba una copia por sincronización (en local
+        llegó a cinco por fila) y la nota vieja convivía con la corregida.
+        """
         for i in interacciones:
-            self._s.add(
-                InteraccionLmsModel(
-                    id=i.id,
-                    moodle_event_id=i.moodle_event_id or None,
-                    moodle_user_id=i.moodle_user_id,
-                    moodle_course_id=i.moodle_course_id,
-                    moodle_activity_id=i.moodle_activity_id or None,
-                    accion=i.accion,
-                    es_correcta=i.es_correcta,
-                    fecha_evento=i.fecha_evento,
+            fila = {
+                "id": i.id,
+                "moodle_event_id": i.moodle_event_id or None,
+                "moodle_user_id": i.moodle_user_id,
+                "moodle_course_id": i.moodle_course_id,
+                "moodle_activity_id": i.moodle_activity_id or None,
+                "accion": i.accion,
+                "es_correcta": i.es_correcta,
+                "fecha_evento": i.fecha_evento,
+            }
+            if fila["moodle_event_id"] is None:
+                # Sin identificador del evento no hay con qué reconocerla.
+                self._s.add(InteraccionLmsModel(**fila))
+                continue
+            await self._s.execute(
+                pg_insert(InteraccionLmsModel)
+                .values(**fila)
+                .on_conflict_do_update(
+                    index_elements=[InteraccionLmsModel.moodle_event_id],
+                    set_={
+                        "moodle_activity_id": fila["moodle_activity_id"],
+                        "accion": fila["accion"],
+                        "es_correcta": fila["es_correcta"],
+                        "fecha_evento": fila["fecha_evento"],
+                    },
                 )
             )
         await self._s.flush()
