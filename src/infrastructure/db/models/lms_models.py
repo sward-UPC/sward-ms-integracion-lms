@@ -59,7 +59,11 @@ class InteraccionLmsModel(Base):
     id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid4
     )
-    moodle_event_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Único: cada evento de Moodle (usuario-cmid) es una sola fila, y cada
+    # sincronización actualiza la que ya está en vez de añadir una copia.
+    moodle_event_id: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, unique=True
+    )
     moodle_user_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     moodle_course_id: Mapped[str] = mapped_column(
         String(100), nullable=False, index=True
