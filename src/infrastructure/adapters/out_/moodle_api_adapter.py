@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -9,6 +10,9 @@ from src.domain.entities.interaccion_lms import InteraccionLMS
 from src.domain.errors import LmsNoDisponibleError
 from src.application.ports.out_.moodle_api_port import MoodleApiPort
 from src.infrastructure.config.settings import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 # Un enlace de Moodle (mod_url) no dice si es un video: se deduce del sitio al
@@ -328,7 +332,20 @@ class MoodleApiAdapter(MoodleApiPort):
             correo = user.get("email", "")
             for item in await self._get_grade_items(moodle_course_id, user_id):
                 graderaw = float(item["graderaw"])
-                grademax = float(item.get("grademax") or 100.0)
+                # Sin grademax no hay con qué comparar la nota: inventar 100
+                # convertía un 20/20 en «incorrecta». Moodle lo omite cuando el
+                # informe del usuario tiene oculta la columna «Rango»
+                # (grade_report_user_showrange), así que se avisa y se salta.
+                if item.get("grademax") in (None, ""):
+                    logger.warning(
+                        "Nota sin grademax: curso %s, usuario %s, item %s. "
+                        "Revisa grade_report_user_showrange en Moodle.",
+                        moodle_course_id,
+                        user_id,
+                        item.get("itemname"),
+                    )
+                    continue
+                grademax = float(item["grademax"])
                 submitted_ts = item.get("gradedatesubmitted")
                 fecha = (
                     datetime.fromtimestamp(submitted_ts, tz=timezone.utc)
