@@ -42,9 +42,7 @@ def upgrade() -> None:
             """
         )
     )
-    op.create_index(
-        INDICE, "lms_interactions", ["moodle_event_id"], unique=True
-    )
+    op.create_index(INDICE, "lms_interactions", ["moodle_event_id"], unique=True)
 
 
 def downgrade() -> None:
