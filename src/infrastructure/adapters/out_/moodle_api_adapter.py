@@ -1,4 +1,6 @@
 import logging
+import re
+import unicodedata
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -18,6 +20,22 @@ logger = logging.getLogger(__name__)
 # Un enlace de Moodle (mod_url) no dice si es un video: se deduce del sitio al
 # que apunta. Así SWARD puede filtrar por formato «Video» (HU-026).
 SITIOS_DE_VIDEO = ("youtube.com", "youtu.be", "vimeo.com")
+
+# Roles de Moodle usados al matricular. El docente va sin permiso de edición: el
+# contenido de los cursos lo genera el proyecto y se recarga, así que una edición
+# manual se perdería y además alteraría los datos del estudio.
+ROL_DOCENTE = 4  # teacher (sin edición)
+ROL_ESTUDIANTE = 5  # student
+
+
+def _sin_tildes(texto: str) -> str:
+    return (
+        unicodedata.normalize("NFKD", texto)
+        .encode("ascii", "ignore")
+        .decode()
+        .lower()
+        .strip()
+    )
 
 
 def tipo_actividad(modulo: dict) -> str:
@@ -392,3 +410,104 @@ class MoodleApiAdapter(MoodleApiPort):
                     )
                 )
         return results
+
+    # ------------------------------------------------------------------ escritura
+    # Moodle responde 200 aunque la operación falle: el error viene en el cuerpo,
+    # con la clave «exception». Leer sólo el código HTTP daría por buena un alta
+    # que no ocurrió, así que las escrituras revisan el cuerpo.
+    async def _call_post(self, function: str, **params) -> list | dict:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                r = await client.post(
+                    f"{settings.moodle_base_url}/webservice/rest/server.php",
+                    data={
+                        "wstoken": settings.moodle_token,
+                        "moodlewsrestformat": "json",
+                        "wsfunction": function,
+                        **params,
+                    },
+                )
+                r.raise_for_status()
+                data = r.json()
+        except httpx.HTTPError as exc:
+            raise LmsNoDisponibleError(
+                f"Fallo al invocar Moodle ({function}): {exc}"
+            ) from exc
+        if isinstance(data, dict) and "exception" in data:
+            raise LmsNoDisponibleError(
+                f"Moodle rechazó {function}: "
+                f"{data.get('errorcode', '')} {data.get('message', '')}".strip()
+            )
+        return data
+
+    async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
+        # El nombre de usuario sale de la parte local del correo, en minúsculas y
+        # sin caracteres que Moodle rechace. Si ya está tomado se le añade un
+        # número, igual que hacía el script de altas.
+        base = re.sub(r"[^a-z0-9._-]", "", _sin_tildes(correo.split("@")[0])) or "participante"
+        username, n = base, 2
+        while await self.buscar_por_username(username) is not None:
+            username, n = f"{base}{n}", n + 1
+
+        data = await self._call_post(
+            "core_user_create_users",
+            **{
+                "users[0][username]": username,
+                "users[0][firstname]": nombres,
+                "users[0][lastname]": apellidos,
+                "users[0][email]": correo,
+                # Sin contraseña: Moodle genera una y la envía por correo, con
+                # cambio obligatorio al primer ingreso.
+                "users[0][createpassword]": "1",
+                "users[0][auth]": "manual",
+            },
+        )
+        creados = data if isinstance(data, list) else []
+        if not creados:
+            raise LmsNoDisponibleError(
+                f"Moodle no devolvió el usuario creado para {correo}"
+            )
+        logger.info("Usuario creado en Moodle: %s (id %s)", correo, creados[0]["id"])
+        return {"moodle_user_id": int(creados[0]["id"]), "username": username}
+
+    async def buscar_por_username(self, username: str) -> dict | None:
+        data = await self._call(
+            "core_user_get_users",
+            **{"criteria[0][key]": "username", "criteria[0][value]": username},
+        )
+        usuarios = (data or {}).get("users") if isinstance(data, dict) else None
+        if not usuarios:
+            return None
+        return {"moodle_user_id": int(usuarios[0]["id"]), "username": username}
+
+    async def buscar_curso_por_codigo(self, codigo: str) -> dict | None:
+        data = await self._call(
+            "core_course_get_courses_by_field", field="shortname", value=codigo
+        )
+        cursos = (data or {}).get("courses") if isinstance(data, dict) else None
+        if not cursos:
+            return None
+        c = cursos[0]
+        return {
+            "moodle_course_id": str(c["id"]),
+            "nombre": c.get("fullname", ""),
+            "codigo": c.get("shortname", codigo),
+        }
+
+    async def matricular(self, moodle_user_id: int, moodle_course_id: str, rol: str) -> None:
+        # Docente sin permiso de edición (4): publica avisos y ve notas y reportes,
+        # pero no puede alterar el contenido del curso, que se genera desde el
+        # proyecto y se recargaría encima de cualquier edición manual.
+        rol_id = ROL_DOCENTE if rol == "docente" else ROL_ESTUDIANTE
+        await self._call_post(
+            "enrol_manual_enrol_users",
+            **{
+                "enrolments[0][roleid]": str(rol_id),
+                "enrolments[0][userid]": str(moodle_user_id),
+                "enrolments[0][courseid]": str(moodle_course_id),
+            },
+        )
+        logger.info(
+            "Matriculado usuario %s en curso %s como %s",
+            moodle_user_id, moodle_course_id, rol,
+        )

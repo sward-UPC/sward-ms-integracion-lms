@@ -35,6 +35,17 @@ MOCK_COURSES = [
     {"id": "course-103", "nombre": "Ingeniería de Software", "codigo": "CS103"},
 ]
 
+# Los dos cursos de la validación del OE4. Van aparte de MOCK_COURSES porque esa
+# lista es fixture de las pruebas de sincronización, que cuentan sus elementos:
+# agregarlos ahí cambiaba los totales y rompía tres pruebas ajenas.
+CURSOS_DE_VALIDACION = [
+    {"id": "course-201", "nombre": "Estadística", "codigo": "SWARD-EST"},
+    {"id": "course-202", "nombre": "Matemática Financiera", "codigo": "SWARD-MF"},
+]
+
+# Matrículas hechas por el mock, para que las pruebas puedan comprobarlas.
+MOCK_MATRICULAS: list[dict] = []
+
 
 class MockMoodleApiAdapter(MoodleApiPort):
     async def get_courses(self) -> list[CursoLMS]:
@@ -94,6 +105,35 @@ class MockMoodleApiAdapter(MoodleApiPort):
         if not entry:
             return None
         return {**entry, "correo": correo}
+
+    # ------------------------------------------------------------------ escritura
+    # El mock sí crea y matricula de verdad sobre sus diccionarios: así una prueba
+    # puede registrar a alguien y luego encontrarlo, que es el flujo que importa.
+    async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
+        nuevo_id = max((u["moodle_user_id"] for u in MOCK_USERS.values()), default=100) + 1
+        username = correo.split("@")[0].lower()
+        MOCK_USERS[correo.lower()] = {
+            "moodle_user_id": nuevo_id,
+            "nombre": nombres,
+            "apellido": apellidos,
+            "rol": "estudiante",
+        }
+        return {"moodle_user_id": nuevo_id, "username": username}
+
+    async def buscar_curso_por_codigo(self, codigo: str) -> dict | None:
+        for c in MOCK_COURSES + CURSOS_DE_VALIDACION:
+            if c["codigo"].lower() == codigo.lower():
+                return {
+                    "moodle_course_id": c["id"],
+                    "nombre": c["nombre"],
+                    "codigo": c["codigo"],
+                }
+        return None
+
+    async def matricular(self, moodle_user_id: int, moodle_course_id: str, rol: str) -> None:
+        MOCK_MATRICULAS.append(
+            {"moodle_user_id": moodle_user_id, "moodle_course_id": moodle_course_id, "rol": rol}
+        )
 
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
         return [

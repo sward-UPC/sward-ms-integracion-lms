@@ -39,3 +39,36 @@ class MoodleApiPort(ABC):
         (estudiante | docente) o None si no existe.
         """
         ...
+
+    # ---------------------------------------------------------------- escritura
+    # Hasta la versión del 24 de septiembre este puerto sólo leía. Crear la cuenta
+    # en Moodle era tarea de un script externo alimentado por un formulario, de
+    # modo que el registro de SWARD sólo funcionaba para quien ya existía allá.
+    # Con estas tres operaciones el propio sistema da de alta al participante.
+
+    @abstractmethod
+    async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
+        """Crea el usuario en Moodle y devuelve `{moodle_user_id, username}`.
+
+        La contraseña no se fija aquí: Moodle genera una y se la envía a la
+        persona, que debe cambiarla al entrar. Así nadie —tampoco el equipo de
+        tesis— llega a conocerla.
+        """
+        ...
+
+    @abstractmethod
+    async def buscar_curso_por_codigo(self, codigo: str) -> dict | None:
+        """Busca un curso por su nombre corto (`shortname`).
+
+        Retorna `{moodle_course_id, nombre, codigo}` o None si no existe.
+        """
+        ...
+
+    @abstractmethod
+    async def matricular(self, moodle_user_id: int, moodle_course_id: str, rol: str) -> None:
+        """Matricula al usuario en el curso con el rol indicado.
+
+        `rol` es «estudiante» o «docente». Es idempotente: matricular a quien ya
+        está matriculado no falla ni duplica.
+        """
+        ...

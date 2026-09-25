@@ -1,6 +1,8 @@
 """Schemas de respuesta relacionados con usuarios de Moodle."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UsuarioMoodleResponse(BaseModel):
@@ -30,4 +32,28 @@ class UsuarioMoodleResponse(BaseModel):
     rol: str = Field(
         description="Rol detectado en Moodle: estudiante | docente",
         example="estudiante",
+    )
+
+
+class ProvisionarParticipanteRequest(BaseModel):
+    """Alta de un participante en Moodle pedida por el registro de SWARD."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "correo": "jperez@upc.edu.pe",
+                "nombres": "Juan",
+                "apellidos": "Pérez",
+                "rol": "estudiante",
+            }
+        },
+    )
+
+    correo: EmailStr = Field(..., description="Correo con el que se registró en SWARD")
+    nombres: str = Field(..., min_length=1, max_length=100)
+    apellidos: str = Field(..., min_length=1, max_length=100)
+    rol: Literal["estudiante", "docente"] = Field(
+        default="estudiante",
+        description="Rol con el que se matricula en los cursos de la validación",
     )
