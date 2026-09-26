@@ -25,3 +25,16 @@ class UsuarioMoodleNoEncontradoError(DomainError):
     def __init__(self, correo: str):
         self.correo = correo
         super().__init__(f"Correo no registrado en la plataforma educativa: {correo}")
+
+
+class CursoDeValidacionNoExisteError(DomainError):
+    """No existe en Moodle un curso con el nombre corto configurado para el estudio.
+
+    Se prefiere fallar a matricular a medias: si falta uno de los dos cursos de la
+    validación, el participante quedaría con historial incompleto y su secuencia
+    no serviría para reentrenar el modelo.
+    """
+
+    def __init__(self, codigo: str):
+        self.codigo = codigo
+        super().__init__(f"No existe en Moodle el curso de validación «{codigo}»")

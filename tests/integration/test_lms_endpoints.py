@@ -75,3 +75,55 @@ async def test_lookup_usuario_existente(client):
 async def test_lookup_usuario_inexistente_retorna_404(client):
     resp = await client.get(LOOKUP, params={"correo": "nadie@sward.edu"})
     assert resp.status_code == 404
+
+
+# ------------------------------------------------------- alta de participantes
+# El alta la hacía un script externo alimentado por un formulario de Google.
+# Desde el 24-sep-2026 es un endpoint que llama el registro de SWARD.
+
+PROVISION = "/lms/users/provision"
+
+
+@pytest.mark.asyncio
+async def test_provisionar_da_de_alta_y_devuelve_el_usuario(client):
+    resp = await client.post(
+        PROVISION,
+        json={
+            "correo": "nuevo.participante@upc.edu.pe",
+            "nombres": "Nuevo",
+            "apellidos": "Participante",
+        },
+    )
+    assert resp.status_code == 201
+    cuerpo = resp.json()
+    assert cuerpo["correo"] == "nuevo.participante@upc.edu.pe"
+    assert cuerpo["rol"] == "estudiante"
+    assert cuerpo["moodle_user_id"] > 0
+
+    # Y a partir de aquí el lookup lo encuentra: es el mismo flujo que sigue
+    # ms-usuarios para asignarle su rol.
+    lookup = await client.get(LOOKUP, params={"correo": "nuevo.participante@upc.edu.pe"})
+    assert lookup.status_code == 200
+    assert lookup.json()["moodle_user_id"] == cuerpo["moodle_user_id"]
+
+
+@pytest.mark.asyncio
+async def test_provisionar_es_idempotente(client):
+    datos = {"correo": "repetido@upc.edu.pe", "nombres": "Ana", "apellidos": "Torres"}
+    primero = await client.post(PROVISION, json=datos)
+    segundo = await client.post(PROVISION, json=datos)
+    assert primero.status_code == segundo.status_code == 201
+    assert primero.json()["moodle_user_id"] == segundo.json()["moodle_user_id"]
+
+
+@pytest.mark.asyncio
+async def test_provisionar_rechaza_datos_incompletos(client):
+    resp = await client.post(PROVISION, json={"correo": "sin.nombre@upc.edu.pe"})
+    assert resp.status_code == 422
+
+
+# El endpoint queda detrás de la clave de servicio por construcción: está
+# registrado en `internal_router`, que declara `Depends(require_service_key)`
+# para todas sus rutas. No se prueba aquí porque en desarrollo no hay claves
+# configuradas y el guardia deja pasar: la prueba mediría la configuración del
+# entorno, no el código.
