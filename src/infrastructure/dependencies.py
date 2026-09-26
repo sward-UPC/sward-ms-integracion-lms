@@ -17,6 +17,9 @@ from src.application.use_cases.consultar_interacciones_lms import (
 from src.application.use_cases.buscar_usuario_moodle import (
     BuscarUsuarioMoodleUseCase,
 )
+from src.application.use_cases.provisionar_participante import (
+    ProvisionarParticipanteUseCase,
+)
 from src.application.use_cases.consultar_recursos_curso_lms import (
     ConsultarRecursosCursoLmsUseCase,
 )
@@ -57,6 +60,12 @@ def get_consultar_recursos_curso_uc() -> ConsultarRecursosCursoLmsUseCase:
 
 def get_buscar_usuario_moodle_uc() -> BuscarUsuarioMoodleUseCase:
     return BuscarUsuarioMoodleUseCase(get_moodle_adapter())
+
+
+def get_provisionar_participante_uc() -> ProvisionarParticipanteUseCase:
+    return ProvisionarParticipanteUseCase(
+        get_moodle_adapter(), settings.cursos_de_validacion.split(",")
+    )
 
 
 def get_consultar_cursos_uc(

@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     moodle_base_url: str = "https://moodle.example.com"
     moodle_token: str = "mock-token"
     moodle_mock: bool = True
+    # Cursos en los que se matricula a quien se registra, por nombre corto de
+    # Moodle. Son los dos de la validación del OE4; se configuran porque cambian
+    # con el estudio y no con el código.
+    cursos_de_validacion: str = "SWARD-EST,SWARD-MF"
     aws_region: str = "us-east-1"
     eventbridge_bus_name: str = "sward-event-bus"
     environment: str = "development"

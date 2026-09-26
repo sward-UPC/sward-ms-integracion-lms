@@ -1,6 +1,10 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, Query, status
 
 from src.application.use_cases.buscar_usuario_moodle import BuscarUsuarioMoodleUseCase
+from src.application.use_cases.provisionar_participante import (
+    ProvisionarParticipanteCommand,
+    ProvisionarParticipanteUseCase,
+)
 from src.application.use_cases.consultar_actividades_lms import (
     ConsultarActividadesLmsUseCase,
 )
@@ -20,6 +24,7 @@ from src.application.use_cases.sincronizar_moodle import (
 )
 from src.infrastructure.dependencies import (
     get_buscar_usuario_moodle_uc,
+    get_provisionar_participante_uc,
     get_consultar_actividades_uc,
     get_consultar_calificaciones_uc,
     get_consultar_cursos_uc,
@@ -34,6 +39,7 @@ from src.infrastructure.adapters.in_.schemas import (
     CalificacionLMSResponse,
     CursoLMSResponse,
     InteraccionLMSResponse,
+    ProvisionarParticipanteRequest,
     RecursoCursoResponse,
     SyncResultResponse,
     UsuarioMoodleResponse,
@@ -314,6 +320,49 @@ async def lookup_usuario_moodle(
     **Auth:** X-Service-Key | **SLA:** <2s (depende de Moodle)
     """
     usuario = await uc.execute(correo)
+    return {
+        "moodle_user_id": usuario.moodle_user_id,
+        "nombre": usuario.nombre,
+        "apellido": usuario.apellido,
+        "correo": usuario.correo,
+        "rol": usuario.rol,
+    }
+
+
+@internal_router.post(
+    "/users/provision",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UsuarioMoodleResponse,
+    responses={
+        201: {"description": "Participante dado de alta y matriculado"},
+        409: {"description": "Falta en Moodle alguno de los cursos de la validación"},
+        422: {"description": "Datos inválidos"},
+        503: {"description": "Moodle no disponible"},
+    },
+)
+async def provisionar_participante(
+    body: ProvisionarParticipanteRequest = Body(...),
+    uc: ProvisionarParticipanteUseCase = Depends(get_provisionar_participante_uc),
+):
+    """Crea la cuenta del participante en Moodle y lo matricula en los cursos del estudio.
+
+    Lo llama ms-usuarios cuando alguien se registra en SWARD y todavía no existe en
+    Moodle. Antes esto lo hacía un script externo alimentado por un formulario, y el
+    registro rechazaba a quien no estuviera ya dado de alta.
+
+    Es **idempotente**: si la cuenta existe se reutiliza, y la matrícula no se duplica.
+    No fija contraseñas — Moodle genera una y se la envía a la persona.
+
+    **Auth:** X-Service-Key | **SLA:** <3s (depende de Moodle)
+    """
+    usuario = await uc.execute(
+        ProvisionarParticipanteCommand(
+            correo=body.correo,
+            nombres=body.nombres,
+            apellidos=body.apellidos,
+            rol=body.rol,
+        )
+    )
     return {
         "moodle_user_id": usuario.moodle_user_id,
         "nombre": usuario.nombre,
