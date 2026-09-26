@@ -110,7 +110,9 @@ class MockMoodleApiAdapter(MoodleApiPort):
     # El mock sí crea y matricula de verdad sobre sus diccionarios: así una prueba
     # puede registrar a alguien y luego encontrarlo, que es el flujo que importa.
     async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
-        nuevo_id = max((u["moodle_user_id"] for u in MOCK_USERS.values()), default=100) + 1
+        nuevo_id = (
+            max((u["moodle_user_id"] for u in MOCK_USERS.values()), default=100) + 1
+        )
         username = correo.split("@")[0].lower()
         MOCK_USERS[correo.lower()] = {
             "moodle_user_id": nuevo_id,
@@ -130,9 +132,15 @@ class MockMoodleApiAdapter(MoodleApiPort):
                 }
         return None
 
-    async def matricular(self, moodle_user_id: int, moodle_course_id: str, rol: str) -> None:
+    async def matricular(
+        self, moodle_user_id: int, moodle_course_id: str, rol: str
+    ) -> None:
         MOCK_MATRICULAS.append(
-            {"moodle_user_id": moodle_user_id, "moodle_course_id": moodle_course_id, "rol": rol}
+            {
+                "moodle_user_id": moodle_user_id,
+                "moodle_course_id": moodle_course_id,
+                "rol": rol,
+            }
         )
 
     async def get_events(self, moodle_course_id: str) -> list[InteraccionLMS]:
