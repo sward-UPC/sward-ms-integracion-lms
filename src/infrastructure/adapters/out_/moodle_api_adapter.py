@@ -444,7 +444,10 @@ class MoodleApiAdapter(MoodleApiPort):
         # El nombre de usuario sale de la parte local del correo, en minúsculas y
         # sin caracteres que Moodle rechace. Si ya está tomado se le añade un
         # número, igual que hacía el script de altas.
-        base = re.sub(r"[^a-z0-9._-]", "", _sin_tildes(correo.split("@")[0])) or "participante"
+        base = (
+            re.sub(r"[^a-z0-9._-]", "", _sin_tildes(correo.split("@")[0]))
+            or "participante"
+        )
         username, n = base, 2
         while await self.buscar_por_username(username) is not None:
             username, n = f"{base}{n}", n + 1
@@ -494,7 +497,9 @@ class MoodleApiAdapter(MoodleApiPort):
             "codigo": c.get("shortname", codigo),
         }
 
-    async def matricular(self, moodle_user_id: int, moodle_course_id: str, rol: str) -> None:
+    async def matricular(
+        self, moodle_user_id: int, moodle_course_id: str, rol: str
+    ) -> None:
         # Docente sin permiso de edición (4): publica avisos y ve notas y reportes,
         # pero no puede alterar el contenido del curso, que se genera desde el
         # proyecto y se recargaría encima de cualquier edición manual.
@@ -509,5 +514,7 @@ class MoodleApiAdapter(MoodleApiPort):
         )
         logger.info(
             "Matriculado usuario %s en curso %s como %s",
-            moodle_user_id, moodle_course_id, rol,
+            moodle_user_id,
+            moodle_course_id,
+            rol,
         )
