@@ -65,7 +65,9 @@ class MoodleApiPort(ABC):
         ...
 
     @abstractmethod
-    async def matricular(self, moodle_user_id: int, moodle_course_id: str, rol: str) -> None:
+    async def matricular(
+        self, moodle_user_id: int, moodle_course_id: str, rol: str
+    ) -> None:
         """Matricula al usuario en el curso con el rol indicado.
 
         `rol` es «estudiante» o «docente». Es idempotente: matricular a quien ya

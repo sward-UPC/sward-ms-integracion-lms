@@ -102,7 +102,9 @@ async def test_provisionar_da_de_alta_y_devuelve_el_usuario(client):
 
     # Y a partir de aquí el lookup lo encuentra: es el mismo flujo que sigue
     # ms-usuarios para asignarle su rol.
-    lookup = await client.get(LOOKUP, params={"correo": "nuevo.participante@upc.edu.pe"})
+    lookup = await client.get(
+        LOOKUP, params={"correo": "nuevo.participante@upc.edu.pe"}
+    )
     assert lookup.status_code == 200
     assert lookup.json()["moodle_user_id"] == cuerpo["moodle_user_id"]
 
