@@ -95,7 +95,9 @@ async def test_falla_si_falta_un_curso_de_la_validacion():
     """Mejor fallar que matricular a medias: media secuencia no sirve para reentrenar."""
     moodle = _moodle_sin_el_usuario()
     moodle.buscar_curso_por_codigo.side_effect = lambda c: (
-        {"moodle_course_id": "7", "nombre": c, "codigo": c} if c == "SWARD-EST" else None
+        {"moodle_course_id": "7", "nombre": c, "codigo": c}
+        if c == "SWARD-EST"
+        else None
     )
     uc = ProvisionarParticipanteUseCase(moodle, CURSOS)
 
@@ -122,7 +124,10 @@ async def test_el_rol_de_quien_ya_existe_manda_sobre_el_pedido():
 
     usuario = await uc.execute(
         ProvisionarParticipanteCommand(
-            correo="prof@upc.edu.pe", nombres="Luis", apellidos="Gómez", rol="estudiante"
+            correo="prof@upc.edu.pe",
+            nombres="Luis",
+            apellidos="Gómez",
+            rol="estudiante",
         )
     )
 

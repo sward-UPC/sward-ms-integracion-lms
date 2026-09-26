@@ -49,7 +49,9 @@ class ProvisionarParticipanteUseCase:
             nombres = existente.get("nombre", cmd.nombres)
             apellidos = existente.get("apellido", cmd.apellidos)
         else:
-            creado = await self._moodle.crear_usuario(correo, cmd.nombres, cmd.apellidos)
+            creado = await self._moodle.crear_usuario(
+                correo, cmd.nombres, cmd.apellidos
+            )
             usuario_id = int(creado["moodle_user_id"])
             rol, nombres, apellidos = cmd.rol, cmd.nombres, cmd.apellidos
 
@@ -63,7 +65,10 @@ class ProvisionarParticipanteUseCase:
 
         logger.info(
             "Participante %s provisionado (id %s, rol %s) en %d curso(s)",
-            correo, usuario_id, rol, len(self._cursos),
+            correo,
+            usuario_id,
+            rol,
+            len(self._cursos),
         )
         return UsuarioMoodle(
             moodle_user_id=usuario_id,
