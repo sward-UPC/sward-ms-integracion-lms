@@ -92,6 +92,7 @@ async def test_provisionar_da_de_alta_y_devuelve_el_usuario(client):
             "correo": "nuevo.participante@upc.edu.pe",
             "nombres": "Nuevo",
             "apellidos": "Participante",
+            "password": "Secreta2026",
         },
     )
     assert resp.status_code == 201
@@ -111,7 +112,12 @@ async def test_provisionar_da_de_alta_y_devuelve_el_usuario(client):
 
 @pytest.mark.asyncio
 async def test_provisionar_es_idempotente(client):
-    datos = {"correo": "repetido@upc.edu.pe", "nombres": "Ana", "apellidos": "Torres"}
+    datos = {
+        "correo": "repetido@upc.edu.pe",
+        "nombres": "Ana",
+        "apellidos": "Torres",
+        "password": "Secreta2026",
+    }
     primero = await client.post(PROVISION, json=datos)
     segundo = await client.post(PROVISION, json=datos)
     assert primero.status_code == segundo.status_code == 201

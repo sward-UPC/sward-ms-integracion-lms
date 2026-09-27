@@ -440,7 +440,9 @@ class MoodleApiAdapter(MoodleApiPort):
             )
         return data
 
-    async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
+    async def crear_usuario(
+        self, correo: str, nombres: str, apellidos: str, password: str
+    ) -> dict:
         # El nombre de usuario sale de la parte local del correo, en minúsculas y
         # sin caracteres que Moodle rechace. Si ya está tomado se le añade un
         # número, igual que hacía el script de altas.
@@ -459,9 +461,12 @@ class MoodleApiAdapter(MoodleApiPort):
                 "users[0][firstname]": nombres,
                 "users[0][lastname]": apellidos,
                 "users[0][email]": correo,
-                # Sin contraseña: Moodle genera una y la envía por correo, con
-                # cambio obligatorio al primer ingreso.
-                "users[0][createpassword]": "1",
+                # La contraseña que la persona eligió en SWARD, para que tenga
+                # una sola. Antes se usaba `createpassword`, que hacía que Moodle
+                # generara una y la mandara por correo: tres contraseñas para el
+                # participante y una viajando en texto plano. La razón completa
+                # está en el puerto.
+                "users[0][password]": password,
                 "users[0][auth]": "manual",
             },
         )
