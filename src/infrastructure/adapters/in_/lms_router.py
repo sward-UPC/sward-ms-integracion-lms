@@ -413,13 +413,12 @@ async def sync(uc: SincronizarMoodleUseCase = Depends(get_sincronizar_moodle_uc)
     return await uc.execute(SincronizarMoodleCommand())
 
 
-@router.put(
+# Va en `internal_router`, no en `router`: lo llama ms-usuarios con su clave de
+# servicio, no una persona con su JWT. Ponerlo en el otro costó dos despliegues,
+# porque el 401 llegaba disfrazado de «no pudimos actualizar tu contraseña».
+@internal_router.put(
     "/users/password",
     status_code=status.HTTP_200_OK,
-    # El router exige JWT por defecto; los endpoints entre servicios lo cambian
-    # por la clave de servicio. Sin esta línea, ms-usuarios recibe un 401 y el
-    # cambio de contraseña falla entero.
-    dependencies=[Depends(require_service_key)],
     responses={
         200: {"description": "Contraseña actualizada, o la persona no está en Moodle"},
         401: {"description": "Falta la clave de servicio"},

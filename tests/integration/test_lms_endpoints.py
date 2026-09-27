@@ -184,15 +184,19 @@ async def test_cambiar_password_exige_una_de_ocho(client):
     assert resp.status_code == 422
 
 
-@pytest.mark.asyncio
-async def test_cambiar_password_exige_la_clave_de_servicio(anon_client):
-    """Sin la clave no se puede tocar la contraseña de nadie.
+def test_cambiar_password_vive_entre_los_endpoints_internos():
+    """Lo llama ms-usuarios con su clave de servicio, no una persona con su JWT.
 
-    El router exige JWT por defecto y los endpoints entre servicios lo cambian
-    por la clave de servicio. Al crear este endpoint se olvidó esa línea y
-    ms-usuarios recibía un 401: el cambio de contraseña fallaba entero.
+    Declararlo en el router equivocado costó dos despliegues: el 401 llegaba
+    disfrazado de «no pudimos actualizar tu contraseña en el aula virtual».
+
+    No se comprueba con una petición sin clave porque `require_service_key` deja
+    pasar cuando no hay ninguna configurada, y en las pruebas no la hay: eso
+    mediría el entorno y no el código.
     """
-    resp = await anon_client.put(
-        PASSWORD, json={"correo": "x@upc.edu.pe", "password": "Nueva2026"}
-    )
-    assert resp.status_code in (401, 403)
+    from src.infrastructure.adapters.in_.lms_router import internal_router, router
+
+    internos = {r.path for r in internal_router.routes}
+    con_jwt = {r.path for r in router.routes}
+    assert "/lms/users/password" in internos
+    assert "/lms/users/password" not in con_jwt
