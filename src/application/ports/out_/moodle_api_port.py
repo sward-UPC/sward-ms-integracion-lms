@@ -47,12 +47,26 @@ class MoodleApiPort(ABC):
     # Con estas tres operaciones el propio sistema da de alta al participante.
 
     @abstractmethod
-    async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
+    async def crear_usuario(
+        self, correo: str, nombres: str, apellidos: str, password: str
+    ) -> dict:
         """Crea el usuario en Moodle y devuelve `{moodle_user_id, username}`.
 
-        La contraseña no se fija aquí: Moodle genera una y se la envía a la
-        persona, que debe cambiarla al entrar. Así nadie —tampoco el equipo de
-        tesis— llega a conocerla.
+        Se fija **la contraseña que la persona acaba de elegir en SWARD**, para
+        que tenga una sola para los dos sitios.
+
+        Hasta el 27 de septiembre de 2026 no se fijaba: Moodle generaba una y se
+        la enviaba por correo, con cambio obligatorio al entrar. Sonaba más
+        prudente y era lo contrario. El participante acababa manejando **tres**
+        contraseñas —la de SWARD, la temporal del correo y la que inventaba al
+        cambiarla— con **dos reglamentos distintos**, porque la política de Moodle
+        pedía además minúscula y carácter especial. Lo reportó quien probó el
+        recorrido completo. Y lo peor no era la molestia: esa contraseña temporal
+        **viajaba por correo en texto plano**, que era el eslabón más débil del
+        sistema. Ahora va de un servicio nuestro a otro por HTTPS y cada uno
+        guarda sólo su huella.
+
+        Quien la recibe no debe registrarla en ningún sitio.
         """
         ...
 

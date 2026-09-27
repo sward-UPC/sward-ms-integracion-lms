@@ -38,7 +38,10 @@ async def test_crea_la_cuenta_y_matricula_en_los_dos_cursos():
 
     usuario = await uc.execute(
         ProvisionarParticipanteCommand(
-            correo="JPerez@upc.edu.pe", nombres="Juan", apellidos="Pérez"
+            correo="JPerez@upc.edu.pe",
+            nombres="Juan",
+            apellidos="Pérez",
+            password="Secreta2026",
         )
     )
 
@@ -46,7 +49,9 @@ async def test_crea_la_cuenta_y_matricula_en_los_dos_cursos():
     assert usuario.moodle_user_id == 42
     assert usuario.rol == "estudiante"
     # El correo se normaliza: Moodle distingue mayúsculas y quedarían dos cuentas.
-    moodle.crear_usuario.assert_awaited_once_with("jperez@upc.edu.pe", "Juan", "Pérez")
+    moodle.crear_usuario.assert_awaited_once_with(
+        "jperez@upc.edu.pe", "Juan", "Pérez", "Secreta2026"
+    )
     assert moodle.matricular.await_count == 2
     cursos_matriculados = {c.args[1] for c in moodle.matricular.await_args_list}
     assert cursos_matriculados == {"7", "8"}
@@ -66,7 +71,10 @@ async def test_no_recrea_a_quien_ya_existe_pero_si_lo_matricula():
 
     usuario = await uc.execute(
         ProvisionarParticipanteCommand(
-            correo="atorres@upc.edu.pe", nombres="Ana", apellidos="Torres"
+            correo="atorres@upc.edu.pe",
+            nombres="Ana",
+            apellidos="Torres",
+            password="Secreta2026",
         )
     )
 
@@ -83,7 +91,11 @@ async def test_el_docente_se_matricula_con_su_rol():
 
     await uc.execute(
         ProvisionarParticipanteCommand(
-            correo="prof@upc.edu.pe", nombres="Luis", apellidos="Gómez", rol="docente"
+            correo="prof@upc.edu.pe",
+            nombres="Luis",
+            apellidos="Gómez",
+            rol="docente",
+            password="Secreta2026",
         )
     )
 
@@ -104,7 +116,10 @@ async def test_falla_si_falta_un_curso_de_la_validacion():
     with pytest.raises(CursoDeValidacionNoExisteError) as exc:
         await uc.execute(
             ProvisionarParticipanteCommand(
-                correo="x@upc.edu.pe", nombres="X", apellidos="Y"
+                correo="x@upc.edu.pe",
+                nombres="X",
+                apellidos="Y",
+                password="Secreta2026",
             )
         )
     assert exc.value.codigo == "SWARD-MF"
@@ -128,6 +143,7 @@ async def test_el_rol_de_quien_ya_existe_manda_sobre_el_pedido():
             nombres="Luis",
             apellidos="Gómez",
             rol="estudiante",
+            password="Secreta2026",
         )
     )
 

@@ -6,8 +6,14 @@ El registro de SWARD sólo admitía a quien ya existía en Moodle, de modo que e
 sistema no podía incorporar a un participante por sí mismo.
 
 Este caso de uso traslada esa responsabilidad al propio sistema, conservando las
-garantías que tenía el script: es idempotente, no fija contraseñas y matricula en
-los cursos de la validación con el rol que corresponde.
+garantías que tenía el script: es idempotente y matricula en los cursos de la
+validación con el rol que corresponde.
+
+Desde el 27 de septiembre **fija la contraseña que la persona eligió en SWARD**,
+para que tenga una sola para los dos sitios. Antes no la fijaba y Moodle mandaba
+una temporal por correo: el participante acababa con tres contraseñas y dos
+reglamentos, y una de ellas viajaba en texto plano. La razón completa está en
+`MoodleApiPort.crear_usuario`.
 """
 
 import logging
@@ -25,6 +31,9 @@ class ProvisionarParticipanteCommand:
     correo: str
     nombres: str
     apellidos: str
+    # La que la persona acaba de elegir en SWARD. Sólo se usa al crear la cuenta:
+    # si ya existe en Moodle no se toca, porque puede haberla cambiado allá.
+    password: str
     rol: str = "estudiante"
 
 
@@ -50,7 +59,7 @@ class ProvisionarParticipanteUseCase:
             apellidos = existente.get("apellido", cmd.apellidos)
         else:
             creado = await self._moodle.crear_usuario(
-                correo, cmd.nombres, cmd.apellidos
+                correo, cmd.nombres, cmd.apellidos, cmd.password
             )
             usuario_id = int(creado["moodle_user_id"])
             rol, nombres, apellidos = cmd.rol, cmd.nombres, cmd.apellidos

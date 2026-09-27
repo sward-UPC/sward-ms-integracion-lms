@@ -109,7 +109,14 @@ class MockMoodleApiAdapter(MoodleApiPort):
     # ------------------------------------------------------------------ escritura
     # El mock sí crea y matricula de verdad sobre sus diccionarios: así una prueba
     # puede registrar a alguien y luego encontrarlo, que es el flujo que importa.
-    async def crear_usuario(self, correo: str, nombres: str, apellidos: str) -> dict:
+    async def crear_usuario(
+        self, correo: str, nombres: str, apellidos: str, password: str
+    ) -> dict:
+        # La contraseña no se guarda ni siquiera en la maqueta: sólo se comprueba
+        # que llegue, porque el fallo que interesa detectar es que el registro
+        # deje de mandarla y Moodle vuelva a generar una temporal.
+        if not password:
+            raise ValueError("crear_usuario necesita la contraseña elegida en SWARD")
         nuevo_id = (
             max((u["moodle_user_id"] for u in MOCK_USERS.values()), default=100) + 1
         )

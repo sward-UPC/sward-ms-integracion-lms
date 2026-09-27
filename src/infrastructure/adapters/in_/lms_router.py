@@ -351,7 +351,10 @@ async def provisionar_participante(
     registro rechazaba a quien no estuviera ya dado de alta.
 
     Es **idempotente**: si la cuenta existe se reutiliza, y la matrícula no se duplica.
-    No fija contraseñas — Moodle genera una y se la envía a la persona.
+
+    Al crear la cuenta le fija **la contraseña que la persona eligió en SWARD**, para
+    que tenga una sola para los dos sitios. Si la cuenta ya existía no se toca: puede
+    haberla cambiado en Moodle. La contraseña no se registra en ningún log.
 
     **Auth:** X-Service-Key | **SLA:** <3s (depende de Moodle)
     """
@@ -360,6 +363,7 @@ async def provisionar_participante(
             correo=body.correo,
             nombres=body.nombres,
             apellidos=body.apellidos,
+            password=body.password,
             rol=body.rol,
         )
     )

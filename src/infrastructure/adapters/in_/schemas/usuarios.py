@@ -45,6 +45,7 @@ class ProvisionarParticipanteRequest(BaseModel):
                 "correo": "jperez@upc.edu.pe",
                 "nombres": "Juan",
                 "apellidos": "Pérez",
+                "password": "········",
                 "rol": "estudiante",
             }
         },
@@ -53,6 +54,16 @@ class ProvisionarParticipanteRequest(BaseModel):
     correo: EmailStr = Field(..., description="Correo con el que se registró en SWARD")
     nombres: str = Field(..., min_length=1, max_length=100)
     apellidos: str = Field(..., min_length=1, max_length=100)
+    # La contraseña que la persona eligió en SWARD, para que le sirva también en
+    # el aula virtual y no tenga que manejar dos. Sólo se usa al crear la cuenta.
+    # El ejemplo va oculto a propósito: la documentación de la API es pública
+    # dentro del despliegue y no debe sugerir contraseñas reales.
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Contraseña elegida en SWARD. Se fija en Moodle al crear la cuenta.",
+    )
     rol: Literal["estudiante", "docente"] = Field(
         default="estudiante",
         description="Rol con el que se matricula en los cursos de la validación",
