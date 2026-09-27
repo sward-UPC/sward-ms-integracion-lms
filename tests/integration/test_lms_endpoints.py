@@ -182,3 +182,17 @@ async def test_cambiar_password_exige_una_de_ocho(client):
         PASSWORD, json={"correo": "x@upc.edu.pe", "password": "corta"}
     )
     assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_cambiar_password_exige_la_clave_de_servicio(anon_client):
+    """Sin la clave no se puede tocar la contraseña de nadie.
+
+    El router exige JWT por defecto y los endpoints entre servicios lo cambian
+    por la clave de servicio. Al crear este endpoint se olvidó esa línea y
+    ms-usuarios recibía un 401: el cambio de contraseña fallaba entero.
+    """
+    resp = await anon_client.put(
+        PASSWORD, json={"correo": "x@upc.edu.pe", "password": "Nueva2026"}
+    )
+    assert resp.status_code in (401, 403)

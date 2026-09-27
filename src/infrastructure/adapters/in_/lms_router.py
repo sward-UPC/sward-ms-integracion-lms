@@ -416,6 +416,10 @@ async def sync(uc: SincronizarMoodleUseCase = Depends(get_sincronizar_moodle_uc)
 @router.put(
     "/users/password",
     status_code=status.HTTP_200_OK,
+    # El router exige JWT por defecto; los endpoints entre servicios lo cambian
+    # por la clave de servicio. Sin esta línea, ms-usuarios recibe un 401 y el
+    # cambio de contraseña falla entero.
+    dependencies=[Depends(require_service_key)],
     responses={
         200: {"description": "Contraseña actualizada, o la persona no está en Moodle"},
         401: {"description": "Falta la clave de servicio"},
