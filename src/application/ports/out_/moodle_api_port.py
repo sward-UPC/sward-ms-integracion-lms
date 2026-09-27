@@ -79,6 +79,19 @@ class MoodleApiPort(ABC):
         ...
 
     @abstractmethod
+    async def cambiar_password(self, moodle_user_id: int, password: str) -> None:
+        """Pone en Moodle la contraseña que la persona acaba de fijar en SWARD.
+
+        Sin esto, «una sola contraseña» sólo vale hasta que la cambia: el alta la
+        copia una vez y a partir de ahí las dos cuentas se separan en silencio.
+        Pasó el 27 de septiembre de 2026, con el tesista cambiando la suya y
+        descubriendo que el aula virtual seguía pidiendo la anterior.
+
+        No se registra en ningún log.
+        """
+        ...
+
+    @abstractmethod
     async def matricular(
         self, moodle_user_id: int, moodle_course_id: str, rol: str
     ) -> None:

@@ -135,3 +135,50 @@ async def test_provisionar_rechaza_datos_incompletos(client):
 # para todas sus rutas. No se prueba aquí porque en desarrollo no hay claves
 # configuradas y el guardia deja pasar: la prueba mediría la configuración del
 # entorno, no el código.
+
+
+# --------------------------------------------------- cambio de contraseña
+# Desde el 27-sep-2026 la persona tiene una sola contraseña para SWARD y el aula
+# virtual. El alta la copia una vez: sin este endpoint, cambiarla en SWARD dejaba
+# el aula virtual pidiendo la anterior, en silencio.
+
+PASSWORD = "/lms/users/password"
+
+
+@pytest.mark.asyncio
+async def test_cambiar_password_actualiza_a_quien_existe(client):
+    datos = {
+        "correo": "cambia@upc.edu.pe",
+        "nombres": "Cambia",
+        "apellidos": "Clave",
+        "password": "Secreta2026",
+    }
+    assert (await client.post(PROVISION, json=datos)).status_code == 201
+
+    resp = await client.put(
+        PASSWORD, json={"correo": "cambia@upc.edu.pe", "password": "Nueva2026"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["cambiada"] is True
+
+
+@pytest.mark.asyncio
+async def test_cambiar_password_de_quien_no_esta_en_moodle_no_es_un_error(client):
+    """Puede ser una cuenta anterior a que el registro provisionara.
+
+    Si esto devolviera un error, SWARD no podría dejar cambiar la contraseña a
+    nadie que no tenga cuenta en el aula virtual.
+    """
+    resp = await client.put(
+        PASSWORD, json={"correo": "nadie@upc.edu.pe", "password": "Nueva2026"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["cambiada"] is False
+
+
+@pytest.mark.asyncio
+async def test_cambiar_password_exige_una_de_ocho(client):
+    resp = await client.put(
+        PASSWORD, json={"correo": "x@upc.edu.pe", "password": "corta"}
+    )
+    assert resp.status_code == 422

@@ -109,6 +109,10 @@ class MockMoodleApiAdapter(MoodleApiPort):
     # ------------------------------------------------------------------ escritura
     # El mock sí crea y matricula de verdad sobre sus diccionarios: así una prueba
     # puede registrar a alguien y luego encontrarlo, que es el flujo que importa.
+    async def cambiar_password(self, moodle_user_id: int, password: str) -> None:
+        if not password:
+            raise ValueError("cambiar_password necesita la contraseña nueva")
+
     async def crear_usuario(
         self, correo: str, nombres: str, apellidos: str, password: str
     ) -> dict:

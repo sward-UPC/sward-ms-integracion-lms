@@ -478,6 +478,19 @@ class MoodleApiAdapter(MoodleApiPort):
         logger.info("Usuario creado en Moodle: %s (id %s)", correo, creados[0]["id"])
         return {"moodle_user_id": int(creados[0]["id"]), "username": username}
 
+    async def cambiar_password(self, moodle_user_id: int, password: str) -> None:
+        await self._call_post(
+            "core_user_update_users",
+            **{
+                "users[0][id]": str(moodle_user_id),
+                "users[0][password]": password,
+            },
+        )
+        # Se registra el id, nunca la contraseña.
+        logger.info(
+            "Contraseña actualizada en Moodle para el usuario %s", moodle_user_id
+        )
+
     async def buscar_por_username(self, username: str) -> dict | None:
         data = await self._call(
             "core_user_get_users",

@@ -13,7 +13,11 @@ from .lms import (
     RecursoCursoResponse,
 )
 from .sync import SyncResultResponse
-from .usuarios import ProvisionarParticipanteRequest, UsuarioMoodleResponse
+from .usuarios import (
+    CambiarPasswordRequest,
+    ProvisionarParticipanteRequest,
+    UsuarioMoodleResponse,
+)
 
 __all__ = [
     "CursoLMSResponse",
@@ -23,5 +27,6 @@ __all__ = [
     "RecursoCursoResponse",
     "SyncResultResponse",
     "UsuarioMoodleResponse",
+    "CambiarPasswordRequest",
     "ProvisionarParticipanteRequest",
 ]

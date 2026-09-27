@@ -17,6 +17,9 @@ from src.application.use_cases.consultar_interacciones_lms import (
 from src.application.use_cases.buscar_usuario_moodle import (
     BuscarUsuarioMoodleUseCase,
 )
+from src.application.use_cases.cambiar_password_moodle import (
+    CambiarPasswordMoodleUseCase,
+)
 from src.application.use_cases.provisionar_participante import (
     ProvisionarParticipanteUseCase,
 )
@@ -66,6 +69,10 @@ def get_provisionar_participante_uc() -> ProvisionarParticipanteUseCase:
     return ProvisionarParticipanteUseCase(
         get_moodle_adapter(), settings.cursos_de_validacion.split(",")
     )
+
+
+def get_cambiar_password_moodle_uc() -> CambiarPasswordMoodleUseCase:
+    return CambiarPasswordMoodleUseCase(get_moodle_adapter())
 
 
 def get_consultar_cursos_uc(
