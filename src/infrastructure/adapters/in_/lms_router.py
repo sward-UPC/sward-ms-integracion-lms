@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Body, Depends, Query, status
 
 from src.application.use_cases.buscar_usuario_moodle import BuscarUsuarioMoodleUseCase
+from src.application.use_cases.cambiar_password_moodle import (
+    CambiarPasswordMoodleCommand,
+    CambiarPasswordMoodleUseCase,
+)
 from src.application.use_cases.provisionar_participante import (
     ProvisionarParticipanteCommand,
     ProvisionarParticipanteUseCase,
@@ -24,6 +28,7 @@ from src.application.use_cases.sincronizar_moodle import (
 )
 from src.infrastructure.dependencies import (
     get_buscar_usuario_moodle_uc,
+    get_cambiar_password_moodle_uc,
     get_provisionar_participante_uc,
     get_consultar_actividades_uc,
     get_consultar_calificaciones_uc,
@@ -39,6 +44,7 @@ from src.infrastructure.adapters.in_.schemas import (
     CalificacionLMSResponse,
     CursoLMSResponse,
     InteraccionLMSResponse,
+    CambiarPasswordRequest,
     ProvisionarParticipanteRequest,
     RecursoCursoResponse,
     SyncResultResponse,
@@ -405,3 +411,36 @@ async def sync(uc: SincronizarMoodleUseCase = Depends(get_sincronizar_moodle_uc)
     **SLA:** <500ms (async) | **Auth:** JWT | **Rate Limit:** 10 req/min
     """
     return await uc.execute(SincronizarMoodleCommand())
+
+
+@router.put(
+    "/users/password",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Contraseña actualizada, o la persona no está en Moodle"},
+        401: {"description": "Falta la clave de servicio"},
+        422: {"description": "Datos inválidos"},
+        503: {"description": "Moodle no disponible"},
+    },
+)
+async def cambiar_password(
+    body: CambiarPasswordRequest = Body(...),
+    uc: CambiarPasswordMoodleUseCase = Depends(get_cambiar_password_moodle_uc),
+):
+    """Pone en Moodle la contraseña que la persona acaba de cambiar en SWARD.
+
+    Sin esto, «una sola contraseña» valía sólo hasta el primer cambio: el alta la
+    copia una vez y a partir de ahí las dos cuentas se separan en silencio, y la
+    persona se encuentra con que el aula virtual le pide la anterior.
+
+    Devuelve `cambiada: false` cuando ese correo no existe en Moodle, que no es un
+    error: puede ser una cuenta anterior a que el registro provisionara.
+
+    La contraseña no se registra en ningún log.
+
+    **Auth:** X-Service-Key | **SLA:** <2s (depende de Moodle)
+    """
+    cambiada = await uc.execute(
+        CambiarPasswordMoodleCommand(correo=body.correo, password=body.password)
+    )
+    return {"cambiada": cambiada}

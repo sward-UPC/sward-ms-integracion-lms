@@ -68,3 +68,18 @@ class ProvisionarParticipanteRequest(BaseModel):
         default="estudiante",
         description="Rol con el que se matricula en los cursos de la validación",
     )
+
+
+class CambiarPasswordRequest(BaseModel):
+    """Cambio de contraseña pedido por SWARD, para que el aula virtual no se
+    quede con la anterior."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {"correo": "jperez@upc.edu.pe", "password": "········"}
+        },
+    )
+
+    correo: EmailStr = Field(..., description="Correo de quien cambió su contraseña")
+    password: str = Field(..., min_length=8, max_length=128)
