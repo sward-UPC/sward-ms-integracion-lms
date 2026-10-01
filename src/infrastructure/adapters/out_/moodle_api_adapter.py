@@ -27,6 +27,11 @@ SITIOS_DE_VIDEO = ("youtube.com", "youtu.be", "vimeo.com")
 ROL_DOCENTE = 4  # teacher (sin edición)
 ROL_ESTUDIANTE = 5  # student
 
+# Nombres cortos con que Moodle devuelve los roles de quien dicta. Se usan para
+# saber el rol de un usuario y para dejar a los docentes fuera de lo que se
+# sincroniza como actividad de estudiante.
+ROLES_DOCENTE = frozenset({"editingteacher", "teacher", "manager", "coursecreator"})
+
 
 def _sin_tildes(texto: str) -> str:
     return (
@@ -128,10 +133,33 @@ class MoodleApiAdapter(MoodleApiPort):
         return out
 
     async def _get_enrolled_users(self, moodle_course_id: str) -> list[dict]:
+        """Los matriculados del curso que son estudiantes.
+
+        Moodle devuelve a TODOS los matriculados, docentes incluidos, y de aquí
+        salen las notas, los recursos vistos y los eventos que SWARD guarda como
+        actividad de estudiante. Sin filtrar, la profesora del estudio aparecía
+        en su propio panel como una alumna más —con su fila de progreso y su
+        nivel de riesgo— y contaba en el promedio del curso y en el conteo de
+        estudiantes en riesgo.
+
+        Se descarta a quien trae rol de docente en vez de exigir el rol de
+        estudiante a propósito: si algún día el token deja de devolver el
+        arreglo de roles, descartar no deja a nadie fuera —el comportamiento de
+        antes, sin empeorar nada— mientras que exigirlo apagaría la
+        sincronización entera sin que nadie se entere.
+        """
         data = await self._call(
             "core_enrol_get_enrolled_users", courseid=moodle_course_id
         )
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        return [
+            u
+            for u in data
+            if not any(
+                r.get("shortname") in ROLES_DOCENTE for r in (u.get("roles") or [])
+            )
+        ]
 
     async def _get_grade_items(self, moodle_course_id: str, user_id: int) -> list[dict]:
         data = await self._call(
@@ -197,7 +225,6 @@ class MoodleApiAdapter(MoodleApiPort):
 
         # Determinar rol revisando los roles en los cursos del usuario.
         rol = "estudiante"
-        ROLES_DOCENTE = {"editingteacher", "teacher", "manager", "coursecreator"}
         try:
             courses = await self._call(
                 "core_enrol_get_users_courses", userid=moodle_user_id
